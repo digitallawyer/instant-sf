@@ -192,6 +192,27 @@ function buildSeaLion() {
   return { group: g, neck, head, flippers, tail, body: bodyMesh };
 }
 
+// Merges the meshes directly under each node that share a material, keeping the joint hierarchy
+// (so animation still works) but cutting draw calls from ~70 per rider to ~20.
+function mergeTree(node) {
+  for (const c of [...node.children]) if (!c.isMesh) mergeTree(c);
+  const byMat = new Map();
+  for (const c of node.children) if (c.isMesh && !c.children.length) { if (!byMat.has(c.material)) byMat.set(c.material, []); byMat.get(c.material).push(c); }
+  for (const [m, list] of byMat) {
+    if (list.length < 2) continue;
+    const geos = list.map(mesh => {
+      mesh.updateMatrix();
+      let g = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
+      for (const k of Object.keys(g.attributes)) if (k !== 'position' && k !== 'normal') g.deleteAttribute(k);
+      return g.applyMatrix4(mesh.matrix);
+    });
+    const merged = new THREE.Mesh(mergeGeometries(geos), m);
+    merged.castShadow = true; merged.receiveShadow = true;
+    for (const mesh of list) node.remove(mesh);
+    node.add(merged);
+  }
+}
+
 // ---------------------------------------------------------------- the avatar
 export class Avatar {
   constructor() {
@@ -215,6 +236,7 @@ export class Avatar {
       if (this.mount === 'bike') { this.bike = buildBike(this.color); this.group.add(this.bike.group); }
       if (this.mount === 'skate') { this.skate = buildSkate(this.color); this.group.add(this.skate.group); }
     }
+    mergeTree(this.group);
     this.group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   }
   setMount(id) { this.mount = id; this.build(); }

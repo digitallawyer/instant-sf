@@ -30,8 +30,8 @@ const en = {
 
   'btn.play': 'Play now',
   'btn.tour': 'Virtual tour',
-  'btn.soon': 'Coming soon',
   'btn.goto': 'Go there in the game',
+  'btn.playone': 'Play',
   'btn.ride': 'Ride here',
   'btn.pause': 'Pause slideshow',
   'btn.resume': 'Play slideshow',
@@ -55,7 +55,14 @@ const en = {
   'home.f.night.t': 'Day and night',
   'home.f.night.d': 'A full day cycle with the sun where it should be over the Bay, and thousands of lit windows after dark.',
   'home.f.modes.t': 'Races, missions and a tour',
-  'home.f.modes.d': 'Race over the hills, run errands against the clock, or sit back on a guided tour past the sights.',
+  'home.f.modes.d': 'Race three rivals over the hills with fortune-cookie power-ups, beat the clock on five missions, or sit back for a 13-stop tour from a foggy dawn at the Golden Gate to night over the skyline.',
+  'home.f.modes.races': '4 races',
+  'home.f.modes.missions': '5 missions',
+  'home.f.modes.tour': 'The tour',
+  'home.f.cable.t': 'Hop on a cable car',
+  'home.f.cable.d': 'Cable cars creep up the Powell and California lines at cable speed. Press E next to one to jump on the running board and ride it over the hill.',
+  'home.f.life.t': 'A city that’s awake',
+  'home.f.life.d': 'Traffic that stops at working signals, people on the sidewalks, sea lions on the Pier 39 docks, ferries and sailboats on the Bay, and street lamps that come on at dusk.',
   'home.explore': 'Explore before you ride',
   'home.explore.sights': 'From Coit Tower to Fort Point: what to see, and a button that takes you there.',
   'home.explore.eat': 'Every café, bar and restaurant on the map, filterable by kind and cuisine.',
@@ -64,7 +71,13 @@ const en = {
   'home.cta.sub': 'Runs in any modern browser. Best with a keyboard on a laptop or desktop.',
 
   'game.title': 'The <em>game</em>',
-  'game.lede': 'Part game, part model city. Instant San Francisco is a 3D version of the city built from open data, where you ride around, look about and, soon, race and play missions.',
+  'game.lede': 'Part game, part model city. Instant San Francisco is a 3D version of the city built from open data, where you ride around, race three rivals over the hills, beat the clock on missions or sit back for a guided tour.',
+  'game.races': 'Races',
+  'game.missions': 'Missions',
+  'game.tour': 'The tour',
+  'game.tour.auto': 'Start the tour',
+  'game.tour.interactive': 'Interactive tour',
+  'game.life': 'A living city',
   'game.what': 'So what is it?',
   'game.modes': 'Modes',
   'game.rides': 'Four ways to get around',
@@ -120,6 +133,9 @@ const en = {
 };
 
 const es = {
+  'btn.playone': 'Jugar',
+  'game.races': 'Carreras', 'game.missions': 'Misiones', 'game.tour': 'La visita', 'game.tour.auto': 'Empezar la visita', 'game.tour.interactive': 'Visita interactiva', 'game.life': 'Una ciudad viva',
+  'home.f.modes.t': 'Carreras, misiones y una visita', 'home.f.cable.t': 'Súbete a un tranvía de cable', 'home.f.modes.races': '4 carreras', 'home.f.modes.missions': '5 misiones', 'home.f.modes.tour': 'La visita',
   'nav.skip': 'Ir al contenido',
   'nav.home': 'Inicio',
   'nav.game': 'El juego',
@@ -137,7 +153,6 @@ const es = {
   'hero.caption': 'En el juego',
   'btn.play': 'Jugar ahora',
   'btn.tour': 'Visita virtual',
-  'btn.soon': 'Próximamente',
   'btn.goto': 'Ir allí en el juego',
   'btn.ride': 'Pedalea aquí',
   'btn.pause': 'Pausar',
@@ -160,6 +175,9 @@ const es = {
 };
 
 const zh = {
+  'btn.playone': '开始',
+  'game.races': '竞速', 'game.missions': '任务', 'game.tour': '导览', 'game.tour.auto': '开始导览', 'game.tour.interactive': '互动导览', 'game.life': '鲜活的城市',
+  'home.f.modes.t': '竞速、任务与导览', 'home.f.cable.t': '跳上缆车', 'home.f.modes.races': '4 条赛道', 'home.f.modes.missions': '5 个任务', 'home.f.modes.tour': '导览',
   'nav.skip': '跳到正文',
   'nav.home': '首页',
   'nav.game': '游戏',
@@ -177,7 +195,6 @@ const zh = {
   'hero.caption': '游戏画面',
   'btn.play': '立即开玩',
   'btn.tour': '虚拟导览',
-  'btn.soon': '即将推出',
   'btn.goto': '在游戏中前往',
   'btn.ride': '从这里出发',
   'btn.pause': '暂停轮播',
@@ -200,6 +217,9 @@ const zh = {
 };
 
 const nl = {
+  'btn.playone': 'Spelen',
+  'game.races': 'Races', 'game.missions': 'Missies', 'game.tour': 'De tour', 'game.tour.auto': 'Start de tour', 'game.tour.interactive': 'Interactieve tour', 'game.life': 'Een levende stad',
+  'home.f.modes.t': 'Races, missies en een tour', 'home.f.cable.t': 'Spring op een cable car', 'home.f.modes.races': '4 races', 'home.f.modes.missions': '5 missies', 'home.f.modes.tour': 'De tour',
   'nav.skip': 'Naar de inhoud',
   'nav.home': 'Home',
   'nav.game': 'Het spel',
@@ -217,7 +237,6 @@ const nl = {
   'hero.caption': 'In het spel',
   'btn.play': 'Speel nu',
   'btn.tour': 'Virtuele tour',
-  'btn.soon': 'Binnenkort',
   'btn.goto': 'Ga erheen in het spel',
   'btn.ride': 'Fiets hierheen',
   'btn.pause': 'Diavoorstelling pauzeren',

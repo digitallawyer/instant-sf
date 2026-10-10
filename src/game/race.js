@@ -67,21 +67,20 @@ export class Race {
     if (this.laps === 1) gateAt(tr.len - 1, 'Finish', { checker: true });
     const nGates = Math.floor(tr.len / 260);
     for (let i = 1; i < nGates; i++) gateAt(i * tr.len / nGates, `Instant SF`);
-    // fortune cookie rows
+    // fortune cookie rows (one instanced mesh)
     this.cookieMat = itemMaterial();
-    const cg = cookieGeometry();
     this.cookies = [];
     for (let d = 140; d < tr.len - 60; d += 230) {
       tr.at(d, tmp);
       for (const off of [-3, 0, 3]) {
         const x = tmp.x - tmp.dz * off, z = tmp.z + tmp.dx * off;
-        const m = new THREE.Mesh(cg, this.cookieMat);
-        m.position.set(x, this.surfaceY(x, z) + 1.0, z);
-        m.castShadow = true;
-        this.group.add(m);
-        this.cookies.push({ m, x, z, respawn: 0 });
+        this.cookies.push({ x, z, y: this.surfaceY(x, z) + 1.0, respawn: 0, rot: Math.random() * 6 });
       }
     }
+    this.cookieMesh = new THREE.InstancedMesh(cookieGeometry(), this.cookieMat, Math.max(1, this.cookies.length));
+    this.cookieMesh.castShadow = true;
+    this.cookieMesh.frustumCulled = false;
+    this.group.add(this.cookieMesh);
   }
 
   get items() { return this.racers[0].items; }
@@ -226,19 +225,22 @@ export class Race {
       this.placeAI(r, dt);
     }
     // cookies
-    for (const c of this.cookies) {
-      if (c.respawn > 0) { c.respawn -= dt; c.m.visible = c.respawn <= 0; continue; }
-      c.m.rotation.y += dt * 2; c.m.position.y += Math.sin(this.t * 3 + c.x) * 0.004;
-      for (const r of this.racers) {
-        const x = this.X(r), z = this.Z(r);
-        if (Math.hypot(x - c.x, z - c.z) < 1.5) {
-          c.respawn = 4; c.m.visible = false;
-          const bag = r.items;
-          if (bag.length < 3) { const it = ITEM_KEYS[Math.floor(Math.random() * ITEM_KEYS.length)]; bag.push(it); if (r.you) { this.audio?.pickup?.(); this.hud.toast(`${ITEMS[it].icon} ${ITEMS[it].name}`, 1200); } }
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), V = new THREE.Vector3(), S = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+    this.cookies.forEach((c, i) => {
+      if (c.respawn > 0) c.respawn -= dt;
+      else for (const r of this.racers) {
+        if (Math.hypot(this.X(r) - c.x, this.Z(r) - c.z) < 1.5) {
+          c.respawn = 4;
+          if (r.items.length < 3) { const it = ITEM_KEYS[Math.floor(Math.random() * ITEM_KEYS.length)]; r.items.push(it); if (r.you) { this.audio?.pickup?.(); this.hud.toast(`${ITEMS[it].icon} ${ITEMS[it].name}`, 1200); } }
           break;
         }
       }
-    }
+      c.rot += dt * 2;
+      q.setFromAxisAngle(up, c.rot);
+      m4.compose(V.set(c.x, c.y + Math.sin(this.t * 3 + c.x) * 0.12, c.z), q, S.setScalar(c.respawn > 0 ? 0.0001 : 1));
+      this.cookieMesh.setMatrixAt(i, m4);
+    });
+    this.cookieMesh.instanceMatrix.needsUpdate = true;
     this.humans.forEach((h, i) => { const inp = inputs[i]; if (inp?.itemPressed) { inp.itemPressed = false; if (racing) this.useItem(h); } });
     // loaves
     for (let i = this.drops.length - 1; i >= 0; i--) {

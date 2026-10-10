@@ -61,6 +61,26 @@ function gridGeometry(hf, step, i0, j0, i1, j1, sink = 0) {
   return g;
 }
 
+// Ponds and lagoons above sea level: the smooth elevation model runs over them, so dig a bed into the
+// height field (the water surface is drawn at the shoreline level; physics then lets you swim there).
+export function carveWater(map, hf) {
+  const inside = (x, z, p) => { let c = false; for (let i = 0, j = p.length - 2; i < p.length; j = i, i += 2) { const xi = p[i], zi = p[i + 1], xj = p[j], zj = p[j + 1]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
+  for (const a of map.areas) {
+    if (a.k !== 'water') continue;
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity, lo = Infinity;
+    for (let i = 0; i < a.p.length; i += 2) { x0 = Math.min(x0, a.p[i]); x1 = Math.max(x1, a.p[i]); z0 = Math.min(z0, a.p[i + 1]); z1 = Math.max(z1, a.p[i + 1]); lo = Math.min(lo, hf.at(a.p[i], a.p[i + 1])); }
+    if ((x1 - x0) * (z1 - z0) > 2e6 || lo < -0.5) continue;
+    a.level = Math.max(lo, 0.3) + 0.2;
+    const bed = Math.round((a.level - 1.6) / hf.scale);
+    for (let j = Math.floor((z0 - hf.minZ) / hf.cell); j <= Math.ceil((z1 - hf.minZ) / hf.cell); j++)
+      for (let i = Math.floor((x0 - hf.minX) / hf.cell); i <= Math.ceil((x1 - hf.minX) / hf.cell); i++) {
+        if (i < 0 || j < 0 || i >= hf.nx || j >= hf.nz) continue;
+        const x = hf.minX + i * hf.cell, z = hf.minZ + j * hf.cell;
+        if (inside(x, z, a.p) && !(a.h || []).some(h => inside(x, z, h))) hf.data[j * hf.nx + i] = Math.min(hf.data[j * hf.nx + i], bed);
+      }
+  }
+}
+
 // Paints OSM land use into two textures covering the play area:
 //   landuse: R park/grass, G wood/scrub, B sand;   paved: R = built-up (buildings, roads, plazas)
 export function paintLanduse(map, hf) {

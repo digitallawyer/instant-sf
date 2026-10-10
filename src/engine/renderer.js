@@ -18,7 +18,7 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 40000);
 
   const csm = new CSM({
-    camera, parent: scene, cascades: 4, maxFar: 2400, mode: 'practical', shadowMapSize: 2048,
+    camera, parent: scene, cascades: 3, maxFar: 1800, mode: 'practical', shadowMapSize: 2048,
     lightDirection: new THREE.Vector3(-1, -1, -1).normalize(), lightIntensity: 3, lightNear: 1, lightFar: 6000, lightMargin: 400, shadowBias: -0.00015,
   });
   csm.fade = true;

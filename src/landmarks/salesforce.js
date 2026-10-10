@@ -28,7 +28,7 @@ const LED_GLSL = /* glsl */`
 
 export function buildSalesforce(ctx) {
   const { map, project } = ctx;
-  let C = project(37.78974, -122.39687), b0 = 4.5, dir = [1, 0];
+  let C = project(37.78974, -122.39687), b0 = 4.5;
   const parts = map.buildings.filter(b => b.h > 300).map(b => ({ b, c: centroid(b.p) })).filter(o => Math.hypot(o.c[0] - C[0], o.c[1] - C[1]) < 70);
   if (parts.length) {
     // the centre: average of all tower parts weighted by vertex extents
@@ -38,7 +38,6 @@ export function buildSalesforce(ctx) {
     b0 = Math.min(...parts.map(o => o.b.b));
   }
   const F = frame(C[0], C[1], 0, -1);
-  void dir;
   const group = new THREE.Group();
   group.name = 'salesforce-tower';
   F.apply(group);
@@ -164,10 +163,8 @@ export function buildSalesforce(ctx) {
   body.cap(plan(H_ROOF, 0.6), H_ROOF, 1);
   // street-level glass is set back a little under a white canopy band
   const base = new Geo();
-  const P0 = plan(0), P1 = plan(10);
   base.loft(plan(9.6, -0.5), 9.6, plan(10.6, -0.5), 10.6);
   base.cap(plan(10.6, -0.5), 10.6, 1);
-  void P0; void P1;
 
   // ---------------------------------------------------------------- crown: lattice shell + LED screen inside
   const crown = new Geo(), screen = new Geo();

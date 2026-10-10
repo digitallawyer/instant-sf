@@ -34,6 +34,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const debug = () => page.evaluate(() => window.audio.debug());
 
 await page.goto(url, { waitUntil: 'networkidle0' });
+// every method must be a safe no-op before unlock
+console.log('before unlock:', await page.evaluate(() => {
+  const a = window.audio;
+  a.update(0.016, { speed: 5, mount: 'bike' }); a.update(NaN); a.update();
+  for (const m of ['jump', 'land', 'bump', 'bell', 'horn', 'bark', 'foghorn', 'pickup', 'countdown', 'finish', 'fail', 'ui']) a[m](0.5);
+  a.setMusic(false); a.setMuted(false);
+  return a.debug();
+}));
 await page.click('#unlock');
 await sleep(500);
 console.log('after unlock:', await debug());

@@ -186,6 +186,38 @@ for (const e of elements.values()) {
     });
   }
 }
+// The Golden Gate's roadway in OSM sits too low between its terrain-anchored ends; give the span its
+// real profile (about 75 m at mid-span, 73 m at the towers, 69 m at the anchorages), blended into the approaches.
+{
+  const [sx, sz] = project(37.81085, -122.47770), [nx, nz] = project(37.82618, -122.47915);
+  const L = Math.hypot(nx - sx, nz - sz), ux = (nx - sx) / L, uz = (nz - sz) / L;
+  const ggName = names.indexOf('Golden Gate Bridge');
+  let n = 0;
+  for (const r of roads) {
+    if (!r.br || !r.y || (r.n !== ggName && r.k > 6)) continue;
+    const mid = (r.p.length >> 2) << 1;
+    if (Math.abs((r.p[mid] - sx) * uz - (r.p[mid + 1] - sz) * ux) > 25) continue;
+    // resample every 20 m so the curve shows
+    const np = [], ny = [];
+    for (let i = 0; i < r.p.length / 2 - 1; i++) {
+      const ax = r.p[i * 2], az = r.p[i * 2 + 1], bx = r.p[i * 2 + 2], bz = r.p[i * 2 + 3], k = Math.max(1, Math.ceil(Math.hypot(bx - ax, bz - az) / 20));
+      for (let j = 0; j < k; j++) { np.push(+(ax + (bx - ax) * j / k).toFixed(1), +(az + (bz - az) * j / k).toFixed(1)); ny.push(r.y[i] + (r.y[i + 1] - r.y[i]) * j / k); }
+    }
+    np.push(r.p[r.p.length - 2], r.p[r.p.length - 1]); ny.push(r.y[r.y.length - 1]);
+    r.p = np; r.y = ny;
+    r.y = r.y.map((y, i) => {
+      const x = r.p[i * 2], z = r.p[i * 2 + 1];
+      const s = (x - sx) * ux + (z - sz) * uz, lat = Math.abs(-(x - sx) * uz + (z - sz) * ux);
+      if (lat > 25 || s < -460 || s > L + 460) return y;
+      const prof = 76 - 7.3e-6 * (s - L / 2) ** 2;
+      const edge = s < -343 ? (s + 460) / 117 : s > L + 343 ? (L + 460 - s) / 117 : 1;
+      n++;
+      return +(y + (prof - y) * Math.max(0, Math.min(1, edge))).toFixed(1);
+    });
+  }
+  console.log(n, 'Golden Gate deck points re-profiled');
+}
+
 // Footpaths and cycleways on a bridge follow the deck of the road they run beside.
 {
   const carSegs = [];

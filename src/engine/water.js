@@ -2,6 +2,7 @@
 // sky, the sun glitter and the fog all play on it. Inland ponds and lagoons reuse the same material.
 import * as THREE from 'three';
 import { GLSL_NOISE, addHook, useShared } from './fog.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export function createWater(map, hf, csm) {
   const mat = new THREE.MeshStandardMaterial({ color: 0x0b1a1f, roughness: 0.05, metalness: 0.0 });
@@ -59,19 +60,24 @@ export function createWater(map, hf, csm) {
   sea.receiveShadow = true;
   group.add(sea);
 
-  // ponds and lagoons above sea level
+  // ponds and lagoons above sea level, merged into one mesh
+  const ponds = [];
   for (const a of map.areas) {
     if (a.k !== 'water') continue;
     let lo = Infinity;
     for (let i = 0; i < a.p.length; i += 2) lo = Math.min(lo, hf.at(a.p[i], a.p[i + 1]));
-    if (lo < 1.2) continue; // the Bay plane already covers it
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (let i = 0; i < a.p.length; i += 2) { x0 = Math.min(x0, a.p[i]); x1 = Math.max(x1, a.p[i]); z0 = Math.min(z0, a.p[i + 1]); z1 = Math.max(z1, a.p[i + 1]); }
+    if (a.level == null) continue; // the Bay itself (the sea plane covers it); see carveWater
+    lo = a.level - 0.25;
     const shape = new THREE.Shape();
-    for (let i = 0; i < a.p.length; i += 2) i ? shape.lineTo(a.p[i], a.p[i + 1]) : shape.moveTo(a.p[i], a.p[i + 1]);
-    for (const h of a.h || []) { const hole = new THREE.Path(); for (let i = 0; i < h.length; i += 2) i ? hole.lineTo(h[i], h[i + 1]) : hole.moveTo(h[i], h[i + 1]); shape.holes.push(hole); }
-    const g = new THREE.ShapeGeometry(shape).rotateX(Math.PI / 2);
-    const m = new THREE.Mesh(g, mat);
-    m.position.y = lo + 0.25;
-    group.add(m);
+    // shape in (x, -z) so that rotating by -90° about x lays it flat facing up
+    for (let i = 0; i < a.p.length; i += 2) i ? shape.lineTo(a.p[i], -a.p[i + 1]) : shape.moveTo(a.p[i], -a.p[i + 1]);
+    for (const h of a.h || []) { const hole = new THREE.Path(); for (let i = 0; i < h.length; i += 2) i ? hole.lineTo(h[i], -h[i + 1]) : hole.moveTo(h[i], -h[i + 1]); shape.holes.push(hole); }
+    const g = new THREE.ShapeGeometry(shape).rotateX(-Math.PI / 2).translate(0, lo + 0.25, 0);
+    g.deleteAttribute('uv');
+    ponds.push(g.index ? g.toNonIndexed() : g);
   }
+  if (ponds.length) group.add(new THREE.Mesh(mergeGeometries(ponds), mat));
   return group;
 }

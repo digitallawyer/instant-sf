@@ -30,7 +30,7 @@ await page.waitForFunction(() => document.querySelector('#loader')?.classList.co
 console.log('loaded in', ((Date.now() - t0) / 1000).toFixed(1), 's');
 const ready = async () => {
   await page.waitForFunction(() => window.__sf && document.querySelector('#loader')?.classList.contains('done'), { timeout: 180000 });
-  await page.evaluate(() => { __sf.setMode('fly'); __sf.setMode('still'); });
+  await page.evaluate(() => { __sf.setMode('fly'); __sf.setMode('still'); window.__lmStill = true; });
 };
 await ready();
 let i = 0;
@@ -50,6 +50,7 @@ await browser.close();
 
 async function place(s) {
   return page.evaluate(s => {
+    if (!window.__lmStill) { __sf.setMode('fly'); __sf.setMode('still'); window.__lmStill = true; }
     const { camera, sky, hf } = __sf;
     const pt = v => {
       if (Array.isArray(v)) return v;

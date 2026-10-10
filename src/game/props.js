@@ -26,9 +26,8 @@ export function gate(width, text, opts = {}) {
     post.position.set(s * width / 2, h / 2, 0); post.castShadow = true; g.add(post);
   }
   const tex = bannerTexture(text, opts);
-  const banner = new THREE.Mesh(new THREE.BoxGeometry(width + 0.4, 1.0, 0.12), [postMat, postMat, postMat, postMat,
-    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.25 }),
-    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.25 })]);
+  const banner = new THREE.Mesh(new THREE.BoxGeometry(width + 0.4, 1.0, 0.12),
+    new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.25 }));
   banner.position.y = h - 0.4; banner.castShadow = true;
   g.add(banner);
   return g;

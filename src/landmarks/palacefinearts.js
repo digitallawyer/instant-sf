@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { Geo, makeMat, mesh, worldRing, centroid, circleRing, GLSL_HASH } from './common.js';
 
 export function buildPalaceFineArts(ctx) {
-  const { map, project, hf } = ctx;
+  const { map, project } = ctx;
   let C = project(37.80290, -122.44840), b0 = 2.7;
   const dome = map.buildings.filter(b => b.rs === 'dome' && b.h > 40).map(b => ({ b, c: centroid(b.p) })).filter(o => Math.hypot(o.c[0] - C[0], o.c[1] - C[1]) < 80)[0];
   if (dome) { C = dome.c; b0 = dome.b.b; }
@@ -24,7 +24,9 @@ export function buildPalaceFineArts(ctx) {
         diffuseColor.rgb *= 0.86 + 0.2 * n;
         diffuseColor.rgb *= 1.0 - 0.18 * smoothstep(${(b0 + 4).toFixed(1)}, ${b0.toFixed(1)}, vLmWorld.y); // weathered at the foot`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-        totalEmissiveRadiance += diffuseColor.rgb * vec3(1.0, 0.84, 0.62) * uNight * ${tint.toFixed(2)} * (0.5 + 0.5 * smoothstep(${(b0 + 50).toFixed(1)}, ${b0.toFixed(1)}, vLmWorld.y));`);
+        // floodlights from the lagoon side, stronger low down
+        float fd = max(dot(normalize(vLmNormal), normalize(vec3(0.9, 0.35, 0.1))), 0.0);
+        totalEmissiveRadiance += diffuseColor.rgb * vec3(1.0, 0.84, 0.62) * uNight * ${tint.toFixed(2)} * (0.25 + 0.75 * fd) * (0.45 + 0.55 * smoothstep(${(b0 + 50).toFixed(1)}, ${b0.toFixed(1)}, vLmWorld.y));`);
   };
   const stone = makeMat(ctx, { color: '#d4b796', roughness: 0.85, side: THREE.DoubleSide }, { worldPos: true, name: 'pfa-stone', hook: stoneHook(0.45) });
   const domeMat = makeMat(ctx, { color: '#c88a5c', roughness: 0.8, side: THREE.DoubleSide }, { worldPos: true, name: 'pfa-dome', hook: stoneHook(0.35) });
@@ -179,7 +181,6 @@ export function buildPalaceFineArts(ctx) {
     const cx = C[0] + Math.cos(a) * RP, cz = C[1] + Math.sin(a) * RP;
     colliders.push({ p: worldRing(circleRing(PIER + 0.6, 8), (x, z) => [cx + x, cz + z]), b: b0 - 1, h: 33 });
   }
-  void hf;
   console.info(`[lm] palace of fine arts at ${C.map(v => v.toFixed(1))}: ${canopies.length} colonnade parts, ${colPos.length} columns`);
   return { group, suppress, colliders, update: null };
 }

@@ -98,7 +98,6 @@ export class Geo {
     if (x0 > x1) [x0, x1] = [x1, x0];
     if (y0 > y1) [y0, y1] = [y1, y0];
     if (z0 > z1) [z0, z1] = [z1, z0];
-    const dx = x1 - x0, dz = z1 - z0;
     if (sides) {
       this.quad([x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1], x0, y0, x1, y1, [0, 0, 1]);
       this.quad([x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0], -x1, y0, -x0, y1, [0, 0, -1]);
@@ -107,7 +106,6 @@ export class Geo {
     }
     if (top) this.quad([x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0], x0, z1, x1, z0, [0, 1, 0]);
     if (bottom) this.quad([x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1], x0, z0, x1, z1, [0, -1, 0]);
-    void dx; void dz;
     return this;
   }
   // vertical prism from a 2D ring [[x,z],...] (either winding); u runs along the perimeter in metres, v = y

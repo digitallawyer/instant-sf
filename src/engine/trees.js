@@ -197,7 +197,7 @@ export function createTrees(map, hf, csm, { density = 1 } = {}) {
       const mesh = new THREE.InstancedMesh(t.geo[lod === 'near' ? 0 : 1], t.mat, Math.max(1, t.list.length));
       mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, t.list.length) * 3), 3);
       mesh.count = 0;
-      mesh.castShadow = true;
+      mesh.castShadow = lod === 'near'; // distant blobs don't need to cast: saves millions of shadow triangles
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
       t[lod] = mesh;

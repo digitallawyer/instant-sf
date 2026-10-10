@@ -41,12 +41,14 @@ export function buildFerryBuilding(ctx) {
           float course = abs(fract(vLmWorld.y / 0.6) - 0.5);
           diffuseColor.rgb *= 1.0 - 0.06 * smoothstep(0.42, 0.5, course) * (1.0 - abs(vLmNormal.y));`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-          totalEmissiveRadiance += diffuseColor.rgb * vec3(1.0, 0.9, 0.75) * uNight * 0.38;`);
+          float fd = max(dot(normalize(vLmNormal), normalize(vec3(-0.6, 0.3, 0.75))), 0.0);
+          float hgt = smoothstep(${(b0 + 80).toFixed(1)}, ${(b0 + 15).toFixed(1)}, vLmWorld.y);
+          totalEmissiveRadiance += diffuseColor.rgb * vec3(1.0, 0.88, 0.7) * uNight * 0.42 * (0.3 + 0.7 * fd) * (0.55 + 0.45 * hgt);`);
     },
   });
   const dark = makeMat(ctx, { color: '#22201d', roughness: 0.35, metalness: 0.3 }, {
     name: 'fb-openings', hook: shader => {
-      shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(1.0, 0.75, 0.45) * uNight * 0.5;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(1.0, 0.75, 0.45) * uNight * 0.22;');
     },
   });
   const copper = makeMat(ctx, { color: '#8a9c8c', roughness: 0.55, metalness: 0.3 }, { name: 'fb-roof' });

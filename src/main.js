@@ -3,7 +3,7 @@ import './engine/fog.js';
 import { shared } from './engine/fog.js';
 import { createRenderer } from './engine/renderer.js';
 import { createSky } from './engine/sky.js';
-import { loadHeightField, paintLanduse, createTerrain, createBackdrop } from './engine/terrain.js';
+import { loadHeightField, paintLanduse, createTerrain, createBackdrop, carveWater } from './engine/terrain.js';
 import { createBuildings } from './engine/buildings.js';
 import { createRoads } from './engine/roads.js';
 import { createWater } from './engine/water.js';
@@ -64,6 +64,7 @@ async function boot() {
   ]);
 
   await step('Shaping the hills', 30);
+  carveWater(map, hf);
   const masks = paintLanduse(map, hf);
   shared.uWorldRect.value.copy(masks.rect);
   scene.add(createTerrain(hf, masks, csm));

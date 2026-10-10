@@ -24,10 +24,10 @@
       <div class="wrap">
         <p class="kicker">Instant San Francisco</p>
         <h1 class="h1" id="page-title" data-i18n-html="game.title">The <em>game</em></h1>
-        <p class="lede" data-i18n="game.lede">Part game, part model city. Instant San Francisco is a 3D version of the city built from open data, where you ride around, look about and, soon, race and play missions.</p>
+        <p class="lede" data-i18n="game.lede">Part game, part model city. Instant San Francisco is a 3D version of the city built from open data, where you ride around, race three rivals over the hills, beat the clock on missions or sit back for a guided tour.</p>
         <div class="btn-row">
           <a class="btn btn-primary" href="/play/"><span data-i18n="btn.play">Play now</span> <span class="arrow" aria-hidden="true">→</span></a>
-          <a class="btn btn-ghost" href="/play/?tour"><span data-i18n="btn.tour">Virtual tour</span> <span class="tag soon" data-i18n="btn.soon">Coming soon</span></a>
+          <a class="btn btn-ghost" href="/play/?tour"><span data-i18n="btn.tour">Virtual tour</span></a>
         </div>
         <p class="hero-meta">Free · no account · works best on a laptop or desktop with a keyboard</p>
       </div>
@@ -37,9 +37,9 @@
       <div class="wrap">
         <div class="section-head"><h2 class="h2" id="what-title" data-i18n="game.what">So what is it?</h2></div>
         <div class="cards4 reveal">
-          <div><h3 class="h3">A game</h3><p>Pick a ride and a colour, then go. Find the sights, chase the steepest streets, and soon race and run missions.</p></div>
+          <div><h3 class="h3">A game</h3><p>Race three rivals with fortune-cookie power-ups, run five timed missions, or just pick a ride and a colour and go.</p></div>
           <div><h3 class="h3">A model city</h3><p>Built from open data, not drawn by hand: the buildings, streets, parks, piers and trees are where the map says they are.</p></div>
-          <div><h3 class="h3">A tour <span class="tag soon">Soon</span></h3><p>A guided ride past the landmarks with a short story at every stop, for when you just want to sit back and look.</p></div>
+          <div><h3 class="h3">A virtual tour</h3><p>Thirteen stops from a foggy dawn at the Golden Gate to night over the skyline. Let it play, or step through it yourself.</p></div>
           <div><h3 class="h3">An experiment</h3><p>How far can a browser go? A whole city, cinematic lighting and fog, in a web page with no plugins.</p></div>
         </div>
       </div>
@@ -54,11 +54,64 @@
           </div>
         </div>
         <div class="modes">
-          <div class="mode-card on reveal"><span class="tag live">Playable</span><h3 class="h3">Explore</h3><p>Free roam. Ride anywhere between the Ferry Building, the Marina and the Presidio, with the names of streets and sights popping up as you pass.</p></div>
-          <div class="mode-card reveal d1"><span class="tag soon">Coming soon</span><h3 class="h3">Race</h3><p>Point-to-point sprints across the city, where picking the flat route around a hill can beat the straight line over it.</p></div>
-          <div class="mode-card reveal d2"><span class="tag soon">Coming soon</span><h3 class="h3">Missions</h3><p>Errands against the clock: deliver a sourdough to the Wharf, catch the cable car turnaround, make it to the ballpark by first pitch.</p></div>
-          <div class="mode-card reveal d3"><span class="tag soon">Coming soon</span><h3 class="h3">Tour</h3><p>A guided ride past the sights, with a short story at each stop. Also reachable from the <a href="/play/?tour">Virtual tour</a> button.</p></div>
+          <a class="mode-card reveal" href="/play/"><h3 class="h3">Explore</h3><p>Free roam. Ride anywhere between the Ferry Building, the Marina and the Presidio, with street and sight names popping up as you pass. Hop on a cable car, or open the map and teleport.</p></a>
+          <a class="mode-card reveal d1" href="#races"><h3 class="h3">Race</h3><p>Four courses on real streets against three rivals, with Mario Kart-style items from floating fortune cookies. No map: learn the hills.</p></a>
+          <a class="mode-card reveal d2" href="#missions"><h3 class="h3">Missions</h3><p>Five jobs against the clock, from catching a runaway sea lion to the last cable car of the night. An arrow points the way; the map stays shut.</p></a>
+          <a class="mode-card reveal d3" href="#tour"><h3 class="h3">Tour</h3><p>A cinematic glide past thirteen sights while the day runs from dawn to night. Automatic, or interactive at your own pace.</p></a>
         </div>
+      </div>
+    </section>
+
+    <section class="section tight" id="races" aria-labelledby="races-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="kicker">Race</p>
+            <h2 class="h2" id="races-title" data-i18n="game.races">Races</h2>
+            <p class="lede">The course follows the shortest bike route between its checkpoints, and you race <span data-rivals>three rivals</span>. Ride through floating fortune cookies to pick up items, carry up to three, and fire them with <kbd>F</kbd>.</p>
+          </div>
+        </div>
+        <ul class="items" aria-label="Items">
+          <li><span class="ico" aria-hidden="true">🐦</span><b>Seagull</b><span>Flies to the rider just ahead and steals their snack. They wobble and slow down.</span></li>
+          <li><span class="ico" aria-hidden="true">🥖</span><b>Sourdough loaf</b><span>Dropped behind you. Whoever rides over it spins out, unless they jump to clear it.</span></li>
+          <li><span class="ico" aria-hidden="true">🌫️</span><b>Karl the Fog</b><span>A fog bank smothers whoever is leading. Slow, and they can’t see a thing.</span></li>
+          <li><span class="ico" aria-hidden="true">🚋</span><b>Cable car boost</b><span>A burst of speed, as if you’d grabbed the cable.</span></li>
+        </ul>
+        <ol class="runs" id="race-list"></ol>
+      </div>
+    </section>
+
+    <section class="section tight" id="missions" aria-labelledby="missions-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="kicker">Missions</p>
+            <h2 class="h2" id="missions-title" data-i18n="game.missions">Missions</h2>
+            <p class="lede">Timed jobs around the city. A light beam marks the target and an arrow under the timer points the way. The city map stays closed, so there’s no teleporting out of trouble.</p>
+          </div>
+        </div>
+        <div class="split-media">
+          <figure class="reveal"><div class="m"><img src="/img/mission-breakers.jpg" alt="The Bay to Breakers mission: a cyclist weaving through runners on Hayes Street with the countdown timer and arrow at the top" loading="lazy" /></div><figcaption>Bay to Breakers: up the Hayes Street hill through the runners.</figcaption></figure>
+          <ol class="runs" id="mission-list"></ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="section tight" id="tour" aria-labelledby="tour-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="kicker">Virtual tour</p>
+            <h2 class="h2" id="tour-title" data-i18n="game.tour">The tour</h2>
+            <p class="lede">The camera glides between <span data-tour-count>thirteen</span> sights, rising over the rooftops between stops and settling into a slow orbit at each, while the day runs from a foggy dawn at the Golden Gate to night over the skyline.</p>
+          </div>
+          <div class="btn-row">
+            <a class="btn btn-primary" href="/play/?tour"><span data-i18n="game.tour.auto">Start the tour</span> <span class="arrow" aria-hidden="true">→</span></a>
+            <a class="btn btn-ghost" href="/play/?tour=interactive" data-i18n="game.tour.interactive">Interactive tour</a>
+          </div>
+        </div>
+        <p class="muted small" style="margin:-24px 0 28px">Interactive: press <kbd>Space</kbd> or <kbd aria-label="Right arrow">→</kbd> to move on to the next stop.</p>
+        <ol class="stops" id="tour-list"></ol>
       </div>
     </section>
 
@@ -92,8 +145,11 @@
         <div class="keys">
           <div class="key"><span><kbd aria-label="Up">↑</kbd><kbd aria-label="Down">↓</kbd><kbd aria-label="Left">←</kbd><kbd aria-label="Right">→</kbd></span>Ride and steer</div>
           <div class="key"><span><kbd>Space</kbd></span>Jump</div>
-          <div class="key"><span><kbd>M</kbd></span>Big map, search and teleport</div>
+          <div class="key"><span><kbd>M</kbd></span>Big map, search and teleport (Explore)</div>
+          <div class="key"><span><kbd>E</kbd></span>Hop on or off a cable car</div>
+          <div class="key"><span><kbd>F</kbd></span>Use an item (races)</div>
           <div class="key"><span><kbd>C</kbd></span>Change ride</div>
+          <div class="key"><span><kbd>R</kbd></span>Change the weather</div>
           <div class="key"><span><kbd>Esc</kbd></span>Menu</div>
           <div class="key"><span><kbd>Enter</kbd></span>Start riding from the menu</div>
         </div>
@@ -106,12 +162,27 @@
         <div class="section-head">
           <div>
             <h2 class="h2" id="weather-title" data-i18n="game.weather">Weather and time</h2>
-            <p class="lede">The sun follows its real path over the city for an October day. Karl the Fog, San Francisco’s famous marine layer, can roll in at any time.</p>
+            <p class="lede">The sun follows its real path over the city for an October day. Press <kbd>R</kbd> to cycle the weather: clear, Karl the Fog, overcast, or rain that leaves the streets wet and shining.</p>
           </div>
         </div>
         <div class="duo">
           <figure class="reveal"><div class="m"><img src="/img/karl-golden-gate.jpg" alt="Fog hiding most of the Golden Gate Bridge, one tower visible" loading="lazy" /></div><figcaption><b>Karl the Fog.</b> Height fog that thickens near the water and thins out over the hills.</figcaption></figure>
           <figure class="reveal d1"><div class="m"><img src="/img/night-nob-hill.jpg" alt="Downtown towers at night with lit windows" loading="lazy" /></div><figcaption><b>After dark.</b> Every window is a little room with its own light and blinds.</figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section tight" aria-labelledby="life-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <h2 class="h2" id="life-title" data-i18n="game.life">A living city</h2>
+            <p class="lede">You’re not alone out there. Cars drive the real street grid and stop at working traffic signals, people walk the sidewalks and step aside for you, and the city keeps moving while you ride.</p>
+          </div>
+        </div>
+        <div class="duo">
+          <figure class="reveal"><div class="m"><img src="/img/cablecar.jpg" alt="A cable car climbing a hill street between parked cars and traffic signals" loading="lazy" /></div><figcaption><b>Cable cars.</b> The Powell–Hyde, Powell–Mason and California lines run at cable speed and stop at their stops. Press <kbd>E</kbd> beside one to ride the running board. F-line streetcars run along Market and the Embarcadero.</figcaption></figure>
+          <figure class="reveal d1"><div class="m"><img src="/img/city-life.jpg" alt="Pedestrians on the sidewalk and cars at a signal on Hayes Street" loading="lazy" /></div><figcaption><b>Street life.</b> Traffic, pedestrians, sea lions hauled out on the Pier 39 docks, gulls over the waterfront, ferries and sailboats on the Bay, and street lamps that come on at dusk.</figcaption></figure>
         </div>
       </div>
     </section>
@@ -175,5 +246,6 @@
 
   <footer id="site-footer"></footer>
   <script type="module" src="/src/site/site.js"></script>
+  <script type="module" src="/src/site/game.js"></script>
 </body>
 </html>

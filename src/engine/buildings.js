@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { GLSL_NOISE, addHook, useShared } from './fog.js';
 
-const CHUNK = 500;
+const CHUNK = 900;
 
 // Façade palettes. SF: pastel stucco Victorians and Edwardians, warm beige and grey downtown masonry,
 // pale concrete and glass towers.

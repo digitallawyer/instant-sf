@@ -84,8 +84,7 @@ export function buildGoldenGate(ctx) {
   const yLow = Math.max(deck(L / 2, -1), deck(L / 2, 1)) + 2.6;
   const k = (CABLE_TOP - yLow) / (L / 2) ** 2;
   const sideCable = (d, yA, dA) => { const c = (CABLE_TOP - yA + k * dA * dA) / dA; return CABLE_TOP - c * d + k * d * d; };
-  const anchorY = side => ({ S: Math.max(deck(sAS, -1), deck(sAS, 1)) + 1.2, N: Math.max(deck(sAN, -1), deck(sAN, 1)) + 1.2 });
-  const AY = anchorY();
+  const AY = { S: Math.max(deck(sAS, -1), deck(sAS, 1)) + 1.2, N: Math.max(deck(sAN, -1), deck(sAN, 1)) + 1.2 };
   const cableY = s => {
     if (s >= 0 && s <= L) return yLow + k * (s - L / 2) ** 2;
     if (s < 0) return sideCable(-s, AY.S, SIDE_SPAN);
@@ -140,7 +139,7 @@ export function buildGoldenGate(ctx) {
   // ================================================================ towers
   const tower = new Geo();
   const conc = new Geo();
-  for (const [ti, s0] of [[0, 0], [1, L]]) {
+  for (const s0 of [0, L]) {
     tower.push(new THREE.Matrix4().makeTranslation(0, 0, -s0));
     conc.push(new THREE.Matrix4().makeTranslation(0, 0, -s0));
     const dk = Math.max(deck(s0, -1), deck(s0, 1));
@@ -155,8 +154,6 @@ export function buildGoldenGate(ctx) {
         [[cx - 0.5, -2.2], [cx + 0.5, -2.2], [cx + 0.5, 2.2], [cx - 0.5, 2.2]], 227.6);
       tower.box(cx - 0.5, 227.6, -2.2, cx + 0.5, 227.62, 2.2, { sides: false, bottom: false });
       // colliders: the legs at street level
-      const [a, b] = sectionAt(dk)[2][1];
-      void a; void b;
       const st = sectionAt(dk)[2];
       const wa = st[st.length - 1][0], wb = st[0][1];
       addCollider([[cx - wa, s0 - wb], [cx + wa, s0 - wb], [cx + wa, s0 + wb], [cx - wa, s0 + wb]], 0, 227);
@@ -209,7 +206,6 @@ export function buildGoldenGate(ctx) {
     conc.prism(roundRectRing(19.6, 9.0, 3.6, 4), 13.6, 14.2, { top: true });
     addCollider([[-21.2, s0 - 10.3], [21.2, s0 - 10.3], [21.2, s0 + 10.3], [-21.2, s0 + 10.3]], g, 14.2 - g);
     tower.pop(); conc.pop();
-    void ti;
   }
   // the fender: a concrete ring wall in the water under the OSM walkway loop around the south tower
   for (const { pts, w } of fenders) {
@@ -222,7 +218,6 @@ export function buildGoldenGate(ctx) {
       conc.quad([A[0], y1, -A[1]], [Bq[0], y1, -Bq[1]], [D[0], y1, -D[1]], [C[0], y1, -C[1]], 0, 0, 1, 1, [0, 1, 0]);
     }
   }
-  // fix the facing of the fender walls (both faces drawn so the winding can't matter)
   // anchorage housings and the art-deco pylons (S1 / N1) at both ends of the suspension spans
   const pylonSuppress = [];
   const osmPylons = map.buildings.filter(b => typeof b.n === 'string' && /^Pylon [SN]1$/.test(b.n)).map(b => ({ b, c: centroid(b.p) }));
