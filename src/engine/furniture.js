@@ -16,6 +16,30 @@ export function signalState(t, phase, axis) {
   return local < 16 ? 'green' : local < 19 ? 'amber' : 'red';
 }
 
+// Per signalised junction: a phase offset and a reference axis, derived from the coordinates so
+// the signal heads drawn here and the traffic in src/life agree on who has green.
+export function signalInfo(map) {
+  const nodeDirs = new Map();
+  for (const r of map.roads) {
+    if (r.k > 6 || r.br) continue;
+    for (let i = 0; i < r.p.length / 2; i++) {
+      const k = key(r.p[i * 2], r.p[i * 2 + 1]);
+      const j = i + 1 < r.p.length / 2 ? i + 1 : i - 1;
+      if (!nodeDirs.has(k)) { const dx = r.p[j * 2] - r.p[i * 2], dz = r.p[j * 2 + 1] - r.p[i * 2 + 1], L = Math.hypot(dx, dz) || 1; nodeDirs.set(k, [dx / L, dz / L]); }
+    }
+  }
+  const info = new Map();
+  for (let i = 0; i < map.signals.length; i += 2) {
+    const k = key(map.signals[i], map.signals[i + 1]);
+    const d = nodeDirs.get(k);
+    if (!d) continue;
+    const h = Math.abs(Math.sin(map.signals[i] * 12.9898 + map.signals[i + 1] * 78.233) * 43758.5453) % 1;
+    info.set(k, { phase: h * 40, ax: d[0], az: d[1] });
+  }
+  return info;
+}
+export const axisOf = (sig, ux, uz) => (Math.abs(ux * sig.ax + uz * sig.az) > 0.7 ? 0 : 1);
+
 function lampGeometry() {
   const pole = new THREE.CylinderGeometry(0.07, 0.11, 7.6, 8).translate(0, 3.8, 0);
   const base = new THREE.CylinderGeometry(0.2, 0.24, 0.6, 8).translate(0, 0.3, 0);
@@ -151,11 +175,13 @@ export function createFurniture(map, hf, csm, rect) {
 
   // ---- traffic signals at mapped signal nodes
   const signals = [], lensItems = [];
+  const sigInfo = signalInfo(map);
   for (let i = 0; i < map.signals.length; i += 2) {
     const sx0 = map.signals[i], sz0 = map.signals[i + 1];
     const at = nodeRoads.get(key(sx0, sz0));
-    if (!at || at.length < 1) continue;
-    const phase = rnd() * 40;
+    const si = sigInfo.get(key(sx0, sz0));
+    if (!at || at.length < 1 || !si) continue;
+    const phase = si.phase;
     // one head per approach direction
     const approaches = [];
     for (const { r, i: vi } of at) {
@@ -167,9 +193,8 @@ export function createFurniture(map, hf, csm, rect) {
       }
     }
     // axis: group approaches by direction (0 = first approach's axis, 1 = roughly perpendicular)
-    const a0 = approaches[0];
     for (const ap of approaches.slice(0, 4)) {
-      const axis = Math.abs(ap.ux * a0.ux + ap.uz * a0.uz) > 0.7 ? 0 : 1;
+      const axis = axisOf(si, ap.ux, ap.uz);
       // pole on the right-hand corner of the approach, facing oncoming traffic
       const back = ap.w / 2 + 3, side = ap.w / 2 + 1.0;
       const x = sx0 + ap.ux * back - ap.uz * side, z = sz0 + ap.uz * back + ap.ux * side;

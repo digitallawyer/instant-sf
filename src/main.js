@@ -10,6 +10,7 @@ import { createWater } from './engine/water.js';
 import { createTrees } from './engine/trees.js';
 import { createFurniture } from './engine/furniture.js';
 import { createWeather } from './engine/weather.js';
+import { buildRoadGraph, createTraffic, createParked } from './life/traffic.js';
 import { createFlyCam } from './engine/flycam.js';
 import { createWorld } from './game/world.js';
 import { Player, createInput } from './game/player.js';
@@ -84,7 +85,13 @@ async function boot() {
   const trees = createTrees(map, hf, csm);
   scene.add(trees);
 
-  await step('Saddling up', 92);
+  await step('Starting the traffic', 90);
+  const graph = buildRoadGraph(map, hf);
+  const traffic = createTraffic(map, hf, csm, graph);
+  const parked = createParked(map, hf, csm, graph);
+  scene.add(traffic.group, parked.group);
+
+  await step('Saddling up', 94);
   const world = createWorld(map, hf, landmarks.colliders || []);
   const places = buildPlaces(map);
   const input = createInput();
@@ -179,7 +186,7 @@ async function boot() {
   const clock = new THREE.Timer();
   renderer.info.autoReset = false;
   let frames = 0, acc = 0, lastFov = camera.fov, menuOrbit = 0;
-  window.__sf = { weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
+  window.__sf = { traffic, parked, weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
     go: (lat, lon, heading) => { const [x, z] = project(lat, lon); player.place(x, z, heading ?? player.heading); chase.snap = true; } };
 
   function frame() {
@@ -201,6 +208,8 @@ async function boot() {
     if (Math.abs(camera.fov - lastFov) > 0.8) { lastFov = camera.fov; csm.updateFrustums(); }
 
     weather.update(dt, camera);
+    traffic.update(dt, mode === 'play' ? player.pos : camera.position, mode === 'play' ? player : null);
+    parked.update(camera.position);
     sky.follow(camera);
     trees.userData.update(camera.position);
     landmarks.update(dt, camera);
