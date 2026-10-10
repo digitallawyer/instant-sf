@@ -19,6 +19,7 @@ import { createBigMap } from './ui/bigmap.js';
 import { createMenu } from './ui/menu.js';
 import { project, unproject } from './city/region.js';
 import { START } from './city/sf.js';
+import { createLandmarks } from './landmarks/index.js';
 
 const DATA = '/data/sf';
 const $ = s => document.querySelector(s);
@@ -59,6 +60,15 @@ async function boot() {
   scene.add(createWater(map, hf, csm));
 
   await step(`Raising ${map.buildings.length.toLocaleString('en-US')} buildings`, 48);
+  const landmarks = createLandmarks({ hf, map, csm, project });
+  scene.add(landmarks.group);
+  if (landmarks.suppress.length) {
+    map.buildings = map.buildings.filter(b => {
+      let cx = 0, cz = 0; for (let i = 0; i < b.p.length; i += 2) { cx += b.p[i]; cz += b.p[i + 1]; }
+      cx /= b.p.length / 2; cz /= b.p.length / 2;
+      return !landmarks.suppress.some(s => (cx - s.x) ** 2 + (cz - s.z) ** 2 < s.r * s.r);
+    });
+  }
   scene.add(createBuildings(map, csm));
 
   await step('Paving the streets', 68);
@@ -162,7 +172,7 @@ async function boot() {
   const clock = new THREE.Timer();
   renderer.info.autoReset = false;
   let frames = 0, acc = 0, lastFov = camera.fov, menuOrbit = 0;
-  window.__sf = { scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
+  window.__sf = { landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
     go: (lat, lon, heading) => { const [x, z] = project(lat, lon); player.place(x, z, heading ?? player.heading); chase.snap = true; } };
 
   function frame() {
@@ -185,6 +195,7 @@ async function boot() {
 
     sky.follow(camera);
     trees.userData.update(camera.position);
+    landmarks.update(dt, camera);
     csm.lightDirection.copy(shared.uSunDir.value).negate();
     for (const l of csm.lights) { l.color.copy(sky.state.sunColor); l.intensity = sky.state.sunIntensity; }
     csm.update();

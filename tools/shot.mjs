@@ -13,7 +13,7 @@ fs.mkdirSync(out, { recursive: true });
 const browser = await puppeteer.launch({
   executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   headless: 'new',
-  userDataDir: path.resolve('data/cache/chrome-profile'),
+  userDataDir: path.resolve(process.env.CHROME_PROFILE || 'data/cache/chrome-profile'),
   args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader=false', '--window-size=1440,900'],
   defaultViewport: { width: 1440, height: 900, deviceScaleFactor: 1 },
 });
