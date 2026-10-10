@@ -1,0 +1,39 @@
+:root {
+  --orange: #e5532d;      /* International Orange, nudged for screens */
+  --orange-deep: #c0362c;
+  --fog: #e9e6e1;
+  --ink: #0e1116;
+  --glass: rgba(14, 17, 22, 0.55);
+  --glass-line: rgba(255, 255, 255, 0.14);
+  --text: #f4f1ec;
+  --muted: rgba(244, 241, 236, 0.62);
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0d10; color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+
+#loader {
+  position: fixed; inset: 0; display: grid; place-items: center; z-index: 50;
+  background: radial-gradient(120% 90% at 50% 110%, #f1b27a 0%, #c98a6a 28%, #4b4f5c 62%, #15181d 100%);
+  transition: opacity .8s ease;
+}
+#loader.done { opacity: 0; pointer-events: none; }
+.loader-inner { width: min(420px, 80vw); text-align: center; }
+.brand { font-family: var(--serif); font-size: clamp(40px, 7vw, 68px); letter-spacing: -0.01em; line-height: 1; color: #fff; }
+.brand em { font-style: italic; color: #ffd9c4; }
+.loader-bar { margin: 28px auto 12px; height: 2px; background: rgba(255,255,255,.18); border-radius: 2px; overflow: hidden; }
+#loader-fill { height: 100%; width: 0; background: #fff; transition: width .3s ease; }
+#loader-step { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+.panel {
+  background: var(--glass); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  border: 1px solid var(--glass-line); border-radius: 14px; color: var(--text);
+}
+.dev-stats { position: absolute; left: 16px; bottom: 16px; padding: 10px 12px; font: 500 11px/1.5 var(--sans); color: var(--muted); font-variant-numeric: tabular-nums; pointer-events: auto; }
+.dev-stats b { color: var(--text); font-weight: 600; }
+.dev-help { position: absolute; right: 16px; bottom: 16px; padding: 10px 12px; font: 500 11px/1.6 var(--sans); color: var(--muted); }
+.dev-help kbd { font: 600 10px var(--sans); color: var(--text); border: 1px solid var(--glass-line); border-radius: 4px; padding: 1px 5px; margin-right: 2px; }
