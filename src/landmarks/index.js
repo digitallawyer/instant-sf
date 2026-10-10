@@ -13,6 +13,7 @@ import { buildTransamerica } from './transamerica.js';
 import { buildCoit } from './coit.js';
 import { buildFerryBuilding } from './ferrybuilding.js';
 import { buildSalesforce } from './salesforce.js';
+import { buildPalaceFineArts } from './palacefinearts.js';
 
 const BUILDERS = [
   ['Golden Gate Bridge', buildGoldenGate],
@@ -20,6 +21,7 @@ const BUILDERS = [
   ['Coit Tower', buildCoit],
   ['Ferry Building', buildFerryBuilding],
   ['Salesforce Tower', buildSalesforce],
+  ['Palace of Fine Arts', buildPalaceFineArts],
 ];
 
 export function createLandmarks(ctx) {

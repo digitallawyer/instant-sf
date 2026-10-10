@@ -10,6 +10,22 @@ const H_TOP = 326;
 const HALF0 = 26.5, HALF1 = 22.0; // half-width at the base and at the roof
 const FLOOR = 4.2;
 
+// low-resolution LED grid playing slow drifting figures and waves (vFac in metres; y relative to the roof)
+const LED_GLSL = /* glsl */`
+  float sfLed(vec2 fac, float t) {
+    vec2 px = floor(vec2(fac.x / 1.52, fac.y / 1.4));
+    float wave = 0.5 + 0.5 * sin(px.x * 0.11 + t * 1.3 + sin(px.y * 0.21 + t) * 2.0);
+    float figs = 0.0;
+    for (int i = 0; i < 4; i++) {
+      float fi = float(i);
+      vec2 c = vec2(mod(t * (6.0 + fi * 2.0) + fi * 37.0, 120.0), 12.0 + 6.0 * sin(t * 0.3 + fi));
+      vec2 d = (px - c) / vec2(2.2, 7.0);
+      figs = max(figs, 1.0 - smoothstep(0.6, 1.0, length(d)));
+    }
+    return mix(wave * 0.3 + 0.08, 1.0, figs) * (0.75 + 0.25 * lmHash(px));
+  }
+`;
+
 export function buildSalesforce(ctx) {
   const { map, project } = ctx;
   let C = project(37.78974, -122.39687), b0 = 4.5, dir = [1, 0];
@@ -69,10 +85,10 @@ export function buildSalesforce(ctx) {
           float shade2 = (1.0 - smoothstep(0.08 - e, 0.08 + e, abs(ly - 2.6))) * 0.8;
           float fin = 1.0 - smoothstep(0.05, 0.05 + fwidth(f.x) + 0.02, lx);
           float metal = clamp(max(max(shade, shade2), fin), 0.0, 1.0);
-          float metalAvg = 0.36;
+          float metalAvg = 0.5;
           float m = mix(metalAvg, metal, aa);
-          vec3 glassC = vec3(0.32, 0.39, 0.45) * (0.9 + 0.15 * lmHash(vec2(floor(col), fl)));
-          vec3 white = vec3(0.86, 0.86, 0.84);
+          vec3 glassC = vec3(0.42, 0.5, 0.57) * (0.9 + 0.15 * lmHash(vec2(floor(col), fl)));
+          vec3 white = vec3(0.9, 0.9, 0.88);
           diffuseColor.rgb = mix(glassC, white, m);
           gR = mix(0.06, 0.45, m);
           gM = mix(0.85, 0.1, m);
@@ -80,7 +96,8 @@ export function buildSalesforce(ctx) {
           vec2 id = vec2(floor(col / 2.0), fl);
           float lit = step(lmHash(id * 0.917 + 4.2), 0.42) * step(f.y, ${(H_ROOF - 2).toFixed(1)}) * step(4.5, f.y);
           vec3 warm = mix(vec3(0.95, 0.85, 0.7), vec3(0.8, 0.88, 1.0), step(0.6, lmHash(id * 1.3)));
-          gE = warm * (1.0 - m) * uNight * mix(0.42 * 0.6, lit * 1.3, aa);
+          float farLit = 0.07 * (0.6 + 0.8 * lmNoise(vec2(f.x * 0.05, f.y * 0.12)));
+          gE = warm * (1.0 - m) * uNight * mix(farLit, lit * 1.3, aa);
         `)
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = gR;')
         .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = gM;')
@@ -90,6 +107,11 @@ export function buildSalesforce(ctx) {
   const uCrown = { value: 0 };
   const crownMat = makeMat(ctx, { color: '#e2e3e0', roughness: 0.5, metalness: 0.15, side: THREE.DoubleSide }, {
     name: 'sf-crown', hook: shader => {
+      shader.uniforms.uCrown = uCrown;
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uCrown;\n' + GLSL_HASH + LED_GLSL)
+        .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+          totalEmissiveRadiance += vec3(1.0, 0.97, 0.92) * sfLed(vFac - vec2(0.0, ${H_ROOF.toFixed(1)}), uTime * 0.35) * uCrown * 1.4 * step(vFac.y, ${(H_ROOF + 44).toFixed(1)});`);
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec2 vFac;')
         .replace('#include <uv_vertex>', '#include <uv_vertex>\nvFac = uv;');
@@ -105,28 +127,18 @@ export function buildSalesforce(ctx) {
         `);
     },
   });
-  const screenMat = makeMat(ctx, { color: '#20262b', roughness: 0.6, metalness: 0.2 }, {
+  const screenMat = makeMat(ctx, { color: '#5d646a', roughness: 0.7, metalness: 0.2 }, {
     name: 'sf-screen', hook: shader => {
       shader.uniforms.uCrown = uCrown;
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec2 vFac;')
         .replace('#include <uv_vertex>', '#include <uv_vertex>\nvFac = uv;');
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec2 vFac;\nuniform float uCrown;\n' + GLSL_HASH)
+        .replace('#include <common>', '#include <common>\nvarying vec2 vFac;\nuniform float uCrown;\n' + GLSL_HASH + LED_GLSL)
         .replace('#include <emissivemap_fragment>', /* glsl */`
           #include <emissivemap_fragment>
-          // low-resolution LED grid playing slow drifting figures and waves
           vec2 px = floor(vec2(vFac.x / 1.52, vFac.y / 1.4));
-          float t = uTime * 0.35;
-          float wave = 0.5 + 0.5 * sin(px.x * 0.11 + t * 1.3 + sin(px.y * 0.21 + t) * 2.0);
-          float figs = 0.0;
-          for (int i = 0; i < 4; i++) {
-            float fi = float(i);
-            vec2 c = vec2(mod(t * (6.0 + fi * 2.0) + fi * 37.0, 120.0), 10.0 + 6.0 * sin(t * 0.3 + fi));
-            vec2 d = (px - c) / vec2(2.2, 7.0);
-            figs = max(figs, 1.0 - smoothstep(0.6, 1.0, length(d)));
-          }
-          float led = mix(wave * 0.35, 1.0, figs) * (0.75 + 0.25 * lmHash(px));
+          float led = sfLed(vFac, uTime * 0.35);
           float dotMask = 0.55 + 0.45 * step(0.25, fract(vFac.x / 1.52)) * step(0.25, fract(vFac.y / 1.4));
           totalEmissiveRadiance += vec3(1.0, 0.97, 0.92) * led * dotMask * uCrown * 2.2;
         `);

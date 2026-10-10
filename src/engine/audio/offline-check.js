@@ -4,6 +4,7 @@
 // Not imported by the game.
 import { createAudioEngine } from '../audio.js';
 import { reseed } from './dsp.js';
+export { K } from './engine.js'; // layer calibration table (tweakable from tests)
 
 const SR = 48000;
 const db = x => (x > 0 ? 20 * Math.log10(x) : -Infinity);

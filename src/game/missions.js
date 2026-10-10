@@ -16,9 +16,14 @@ export class Mission {
     this.group = new THREE.Group(); scene.add(this.group);
     this.t = 0; this.limit = def.limit; this.state = 'running';
     this.beacon = beacon(); this.group.add(this.beacon);
-    const [sx, sz] = P(def.start);
+    let [sx, sz] = P(def.start);
+    const st = world.nearestStreet(sx, sz);
+    if (st && Math.hypot(st.x - sx, st.z - sz) < 60) { sx = st.x; sz = st.z; }
     player.place(sx, sz, def.heading ?? 0);
     this['setup_' + def.type]();
+    // face the first objective
+    const first = def.path ? P(def.path[0]) : this.target ? [this.target.x, this.target.z] : null;
+    if (first) player.place(sx, sz, Math.atan2(first[0] - sx, first[1] - sz));
   }
   setTarget(x, z, name) { this.target = { x, z, name }; this.beacon.position.set(x, this.world.surface(x, z, 1e4).y, z); this.beacon.visible = true; }
   near(x, z, r) { return Math.hypot(this.player.pos.x - x, this.player.pos.z - z) < r; }
