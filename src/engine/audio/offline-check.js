@@ -10,7 +10,7 @@ const SR = 48000;
 const db = x => (x > 0 ? 20 * Math.log10(x) : -Infinity);
 const BASE = { speed: 0, mount: 'walk', air: false, surface: 'ground', height: 5, grade: 0, fog: 0, night: 0, wet: 0, nearWater: 0, traffic: 0, braking: false };
 
-const TAIL = 12; // silent tail rendered after the measured window so every voice can finish before we count leaks
+const TAIL = 14; // silent tail rendered after the measured window so every voice can finish before we count leaks
 
 export async function render(seconds, { state, shot, music = false, measureFrom = 0, stateAt } = {}) {
   const ctx = new OfflineAudioContext(2, Math.ceil(SR * (seconds + TAIL)), SR);
@@ -52,7 +52,7 @@ export async function render(seconds, { state, shot, music = false, measureFrom 
   const n = Math.max(1, i1 - i0);
   return {
     peakDb: db(peak), rmsDb: db(Math.sqrt(sum / n)), maxRms100Db: db(Math.sqrt(Math.max(0, winMax) / W)),
-    nan: bad, softClipped: over, voicesLeft: eng.debug().voices,
+    nan: bad, softClipped: over, voicesLeft: eng.debug().voices, fired: eng.debug().fired,
   };
 }
 
@@ -87,6 +87,7 @@ export const SHOTS = [
   ['amb: foghorn far', 9, e => e._amb.foghornFar()],
   ['amb: horn far', 2, e => e._amb.hornFar()],
   ['amb: bark far', 3, e => e._amb.barkFar()],
+  ['garbage args land(NaN) bump("x") countdown()', 1.5, e => { e.land(NaN); e.bump('x'); e.countdown(); }],
 ];
 
 export const SCENES = [
@@ -109,6 +110,7 @@ export const SCENES = [
   ['rain downtown', { wet: 1, traffic: 0.7 }],
   ['night crickets, quiet', { night: 1 }],
   ['airborne skate 8 m/s', { mount: 'skate', speed: 8, air: true }],
+  ['garbage inputs (NaN/Infinity/strings)', { speed: NaN, mount: 'car', surface: 42, height: Infinity, grade: NaN, fog: -3, night: 'x', wet: 7, nearWater: null, traffic: undefined, braking: 'yes' }],
 ];
 
 export async function runOfflineReport(log = () => {}) {
@@ -145,6 +147,9 @@ export async function runOfflineReport(log = () => {}) {
       }),
     })),
   });
+  // long run: do the sparse random events (birds, gulls, horns, sirens, barks, auto-foghorn) actually fire?
+  const long = await render(120, { state: { fog: 0.9, traffic: 0.8, nearWater: 1, night: 0.2 }, measureFrom: 1 });
+  rows.push({ kind: 'events', name: '120 s fog .9/traffic .8/bay: ' + Object.entries(long.fired).filter(([k]) => k !== 'grunt').map(([k, v]) => `${k} ${v}`).join(' '), ...long });
   return rows;
 }
 

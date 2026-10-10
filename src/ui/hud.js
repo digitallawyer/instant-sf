@@ -23,7 +23,7 @@ export function createHud(root, { map, hf, world, places }) {
       <div class="place-title"><div class="hood"></div><div class="street"></div></div>
       <div class="nearby panel"></div>
       <div class="gauges panel"><div class="g-speed"><b>0</b><span>mph</span></div><div class="g-row"><span class="g-elev"></span><span class="g-grade"></span></div></div>
-      <div class="hud-buttons"><button class="hb" data-act="menu">Menu</button><button class="hb" data-act="map">Map <kbd>M</kbd></button></div>
+      <div class="hud-buttons"><button class="hb" data-act="sound">Sound on</button><button class="hb" data-act="menu">Menu</button><button class="hb" data-act="map">Map <kbd>M</kbd></button></div>
       <div class="toast"></div>
       <div class="hint panel"></div>
     </div>`);

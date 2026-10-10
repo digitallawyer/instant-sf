@@ -157,6 +157,7 @@ export function buildEngine(ctx, L, V, opts = {}) {
   const ph = Array.from({ length: 12 }, () => rr(0, Math.PI * 2));
   const rh = { tick: { next: 0 }, clack: { next: 0 }, plank: { next: 0 }, step: { next: 0 }, slap: { next: 0 }, swim: { next: 0 } };
   const timers = { bird: rr(2, 6), gull: rr(3, 9), horn: rr(10, 30), siren: rr(40, 100), fog: rr(6, 10), grunt: rr(2, 5), bark: rr(30, 70) };
+  const fired = { birds: 0, gulls: 0, horn: 0, siren: 0, bark: 0, foghorn: 0, grunt: 0 };
   let prevSpeed = 0, accS = 0, coastOn = 0, coastOff = 0, coasting = false, muted = false;
 
   const gustAt = t => clamp(0.5 + 0.28 * Math.sin(t * 0.21 + ph[0]) + 0.17 * Math.sin(t * 0.53 + ph[1]) + 0.08 * Math.sin(t * 1.37 + ph[2]), 0, 1);
@@ -282,7 +283,7 @@ export function buildEngine(ctx, L, V, opts = {}) {
     });
     if (mount === 'sealion') {
       timers.grunt -= dt;
-      if (timers.grunt <= 0) { timers.grunt = moving ? rr(3, 7) : rr(6, 14); if (!muted) sfx.grunt(water ? 0.6 : 1); }
+      if (timers.grunt <= 0) { timers.grunt = moving ? rr(3, 7) : rr(6, 14); if (!muted) { sfx.grunt(water ? 0.6 : 1); fired.grunt++; } }
     }
 
     // ---- swimming
@@ -320,23 +321,23 @@ export function buildEngine(ctx, L, V, opts = {}) {
     if (!muted) {
       timers.bird -= dt * day;
       if (timers.bird <= 0) {
-        timers.bird = rr(2.5, 8);
-        if (day > 0.35) sfx.birds(day * (1 - 0.5 * trafficAmt0) * (1 - hN) * (1 - wet) * (water ? 0.3 : 1));
+        timers.bird = rr(3.5, 10);
+        if (day > 0.35) { sfx.birds(day * (1 - 0.5 * trafficAmt0) * (1 - hN) * (1 - wet) * (water ? 0.3 : 1)); fired.birds++; }
       }
       timers.gull -= dt * nearWater * (0.3 + 0.7 * day);
       if (timers.gull <= 0) {
         timers.gull = rr(6, 16);
-        if (nearWater > 0.3 && day > 0.3) sfx.gulls(nearWater * (0.5 + 0.5 * day) * (1 - 0.5 * wet));
+        if (nearWater > 0.3 && day > 0.3) { sfx.gulls(nearWater * (0.5 + 0.5 * day) * (1 - 0.5 * wet)); fired.gulls++; }
       }
       timers.horn -= dt * trafficAmt0;
-      if (timers.horn <= 0) { timers.horn = rr(14, 40); if (trafficAmt0 > 0.15) sfx.horn({ distant: true, level: 0.5 + 0.5 * trafficAmt0 }); }
+      if (timers.horn <= 0) { timers.horn = rr(14, 40); if (trafficAmt0 > 0.15) { sfx.horn({ distant: true, level: 0.5 + 0.5 * trafficAmt0 }); fired.horn++; } }
       timers.siren -= dt * trafficAmt0;
-      if (timers.siren <= 0) { timers.siren = rr(70, 160); if (trafficAmt0 > 0.3) sfx.siren(0.6 + 0.4 * trafficAmt0); }
+      if (timers.siren <= 0) { timers.siren = rr(70, 160); if (trafficAmt0 > 0.3) { sfx.siren(0.6 + 0.4 * trafficAmt0); fired.siren++; } }
       timers.bark -= dt * nearWater;
-      if (timers.bark <= 0) { timers.bark = rr(45, 110); if (nearWater > 0.6) sfx.bark({ distant: true, level: nearWater }); }
+      if (timers.bark <= 0) { timers.bark = rr(45, 110); if (nearWater > 0.6) { sfx.bark({ distant: true, level: nearWater }); fired.bark++; } }
       if (fog > 0.4) {
         timers.fog -= dt;
-        if (timers.fog <= 0) { timers.fog = rr(27, 33); sfx.foghorn({ distant: true, level: 0.6 + 0.4 * fog }); }
+        if (timers.fog <= 0) { timers.fog = rr(27, 33); sfx.foghorn({ distant: true, level: 0.6 + 0.4 * fog }); fired.foghorn++; }
       } else if (timers.fog < 6) timers.fog = rr(6, 10); // first horn a few seconds after the fog rolls in
     }
 
@@ -372,7 +373,7 @@ export function buildEngine(ctx, L, V, opts = {}) {
     ui: () => sfx.ui(),
     // ambient one-shots (normally fired by the random scheduler) - exposed for testing
     _amb: { birds: l => sfx.birds(l), gulls: l => sfx.gulls(l), siren: l => sfx.siren(l), grunt: l => sfx.grunt(l), foghornFar: () => sfx.foghorn({ distant: true }), hornFar: () => sfx.horn({ distant: true }), barkFar: () => sfx.bark({ distant: true }) },
-    debug: () => ({ voices: sfx.active, musicVoices: music.active, time: ctx.currentTime, compReduction: comp.reduction, coasting }),
+    debug: () => ({ voices: sfx.active, musicVoices: music.active, time: ctx.currentTime, compReduction: comp.reduction, coasting, fired: { ...fired } }),
     nodes: { master, comp, verbIn },
   };
 }

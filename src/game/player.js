@@ -94,6 +94,7 @@ export class Player {
       // scrub speed by how head-on the hit was
       const mx = p.x - this.pos.x, mz = p.z - this.pos.z, ml = Math.hypot(mx, mz);
       const along = ml > 1e-4 ? (mx * fx + mz * fz) / ml : 0;
+      if (Math.abs(this.speed) > 3 && along < 0.7) this.onBump?.(Math.min(1, Math.abs(this.speed) / 8 * (1 - along)));
       this.speed *= Math.max(0.2, Math.min(1, along));
     }
     const prevX = this.pos.x, prevZ = this.pos.z;

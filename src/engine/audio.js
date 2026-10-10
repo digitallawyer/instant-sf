@@ -8,6 +8,7 @@
 //
 // Every method is a safe no-op before unlock() (or if Web Audio is unavailable).
 import { buildEngine } from './audio/engine.js';
+import { reseed } from './audio/dsp.js';
 
 // ---- master volume constants (linear gain) ---------------------------------------------------
 export const AUDIO_LEVELS = {
@@ -15,7 +16,7 @@ export const AUDIO_LEVELS = {
   sfx: 0.8,        // one-shots: game feedback, bell, horn, bark, jumps/landings
   movement: 0.75,  // player layers: tyres, wheels, footsteps, swimming
   ambience: 0.7,   // wind, traffic, bay, rain, birds, crickets, foghorn
-  music: 0.15,     // generative music bed (when enabled)
+  music: 0.22,     // generative music bed (when enabled)
   reverb: 0.5,     // reverb return
 };
 
@@ -58,6 +59,7 @@ export function createAudio({ muted: startMuted = false, music: startMusic = fal
           const AC = globalThis.AudioContext || globalThis.webkitAudioContext;
           if (!AC) { failed = true; return Promise.resolve(false); }
           ctx = new AC({ latencyHint: 'interactive' });
+          reseed((Math.random() * 4294967296) >>> 0); // offline tests reseed deterministically; real sessions vary
           eng = createAudioEngine(ctx);
           eng.setMuted(muted);
           if (musicOn) eng.setMusic(true);

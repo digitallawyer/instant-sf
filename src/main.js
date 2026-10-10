@@ -24,6 +24,7 @@ import { createBigMap } from './ui/bigmap.js';
 import { createMenu } from './ui/menu.js';
 import { createGameHud } from './ui/gamehud.js';
 import { createTouch, isTouch } from './ui/touch.js';
+import { createAudio } from './engine/audio.js';
 import { buildStreetGraph } from './game/route.js';
 import { Race, buildRaceTrack } from './game/race.js';
 import { Mission } from './game/missions.js';
@@ -154,7 +155,16 @@ async function boot() {
   };
   const bigmap = createBigMap(hudRoot, { map, hf, places, onTeleport: teleport });
 
-  let audio = null; // procedural sound, wired in once available
+  let audio = null;
+  try {
+    let muted = false; try { muted = localStorage.getItem('isf.muted') === '1'; } catch {}
+    audio = createAudio({ muted });
+    for (const ev of ['pointerdown', 'keydown', 'touchend']) addEventListener(ev, () => audio.unlock(), { passive: true });
+  } catch (e) { console.warn('audio unavailable', e); audio = null; }
+  traffic.onHonk = c => { if (Math.hypot(c.s.x - player.pos.x, c.s.z - player.pos.z) < 40) audio?.horn(); };
+  transit.onBell = v => { if (Math.hypot(v.x - player.pos.x, v.z - player.pos.z) < 70) audio?.bell(); };
+  player.onBump = i => audio?.bump(i);
+  let prevAir = false, fallV = 0;
   let mode = 'menu'; // menu | play | fly | tour
   let game = null;   // the running race / mission / tour, if any
   let streets = null, raceStreets = null;
@@ -297,6 +307,10 @@ async function boot() {
     const b = e.target.closest('[data-act]'); if (!b) return;
     if (b.dataset.act === 'menu') setMode('menu');
     if (b.dataset.act === 'map') bigmap.toggle(player);
+    if (b.dataset.act === 'sound' && audio) {
+      audio.setMuted(!audio.muted); b.textContent = audio.muted ? 'Sound off' : 'Sound on';
+      try { localStorage.setItem('isf.muted', audio.muted ? '1' : '0'); } catch {}
+    }
   });
   // drag to orbit the chase camera
   {
@@ -314,7 +328,7 @@ async function boot() {
   const clock = new THREE.Timer();
   renderer.info.autoReset = false;
   let frames = 0, acc = 0, lastFov = camera.fov, menuOrbit = 0;
-  window.__sf = { RACES, MISSIONS, player2, setPlayers, startGame, endGame, get game() { return game; }, fly, people, critters, transit, traffic, parked, weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
+  window.__sf = { get audio() { return audio; }, RACES, MISSIONS, player2, setPlayers, startGame, endGame, get game() { return game; }, fly, people, critters, transit, traffic, parked, weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
     go: (lat, lon, heading) => { const [x, z] = project(lat, lon); player.place(x, z, heading ?? player.heading); chase.snap = true; } };
 
   function frame() {
@@ -365,6 +379,26 @@ async function boot() {
     if (Math.abs(camera.fov - lastFov) > 0.8) { lastFov = camera.fov; csm.updateFrustums(); }
 
     weather.update(dt, camera);
+    if (audio) {
+      const P = player;
+      if (mode === 'play') {
+        if (P.air) fallV = Math.max(fallV, -P.vy);
+        if (!prevAir && P.air && P.vy > 0) audio.jump();
+        if (prevAir && !P.air) { audio.land(Math.min(1, fallV / 12)); fallV = 0; }
+        prevAir = P.air;
+      }
+      let water = 0;
+      for (const [dx, dz] of [[60, 0], [-60, 0], [0, 60], [0, -60], [0, 0]]) if (hf.at(P.pos.x + dx, P.pos.z + dz) < 0) water += 0.2;
+      let near = 0;
+      for (const c of traffic.cars) if (Math.abs(c.s.x - P.pos.x) < 90 && Math.abs(c.s.z - P.pos.z) < 90) near++;
+      const playing = mode === 'play';
+      audio.update(dt, {
+        speed: playing ? P.speed : 0, mount: P.mount, air: playing && P.air, surface: P.surface.kind,
+        height: mode === 'tour' || mode === 'fly' ? camera.position.y : P.pos.y, grade: Math.tan(P.pitch),
+        fog: sky.state.karl, night: shared.uNight.value, wet: shared.uWet.value, nearWater: water,
+        traffic: Math.min(1, near / 12), braking: playing && input.down && P.speed > 1, pedal: playing && input.up,
+      });
+    }
     traffic.update(dt, mode === 'play' ? player.pos : camera.position, mode === 'play' ? player : null);
     transit.update(dt);
     people.update(dt, mode === 'play' ? player.pos : camera.position, mode === 'play' ? player : null);
