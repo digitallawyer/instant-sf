@@ -159,7 +159,7 @@ export function createSky(renderer, scene) {
       if (envRT) envRT.dispose();
       envRT = rt;
       scene.environment = rt.texture;
-      scene.environmentIntensity = Math.max(0.04, p.amb) * 0.42;
+      scene.environmentIntensity = Math.max(0.04, p.amb) * 0.52;
     }
   }
 

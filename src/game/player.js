@@ -22,6 +22,8 @@ export class Player {
     this.pitch = 0;
     this.time = 0;
     this.frozen = false;
+    this.obstacles = null; // () => [{ x, z, y, yaw, len, w }] moving vehicles to bump into
+    this.riding = null;    // a transit vehicle we're hanging on to
   }
   get mount() { return this.avatar.mount; }
   place(x, z, heading = this.heading) {
@@ -69,6 +71,19 @@ export class Player {
     for (let s = 0; s < steps; s++) {
       p.x += fx * dist / steps; p.z += fz * dist / steps;
       if (this.world.collide(p, 0.45, this.pos.y)) bumped = true;
+    }
+    if (this.obstacles) for (const o of this.obstacles(p.x, p.z)) {
+      if (Math.abs((o.y ?? this.pos.y) - this.pos.y) > 3) continue;
+      const sy = Math.sin(o.yaw), cy = Math.cos(o.yaw), dx = p.x - o.x, dz = p.z - o.z;
+      const f = dx * sy + dz * cy, rt = dx * cy - dz * sy;
+      const hl = o.len / 2 + 0.45, hw = o.w / 2 + 0.45;
+      if (Math.abs(f) < hl && Math.abs(rt) < hw) {
+        const pf = hl - Math.abs(f), pr = hw - Math.abs(rt);
+        if (pf < pr) { p.x += sy * Math.sign(f) * pf; p.z += cy * Math.sign(f) * pf; }
+        else { p.x += cy * Math.sign(rt) * pr; p.z -= sy * Math.sign(rt) * pr; }
+        bumped = true;
+        this.onBump?.(Math.min(1, Math.abs(this.speed) / 8));
+      }
     }
     if (bumped) {
       // scrub speed by how head-on the hit was

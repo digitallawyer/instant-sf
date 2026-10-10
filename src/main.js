@@ -11,6 +11,7 @@ import { createTrees } from './engine/trees.js';
 import { createFurniture } from './engine/furniture.js';
 import { createWeather } from './engine/weather.js';
 import { buildRoadGraph, createTraffic, createParked } from './life/traffic.js';
+import { createTransit } from './life/transit.js';
 import { createFlyCam } from './engine/flycam.js';
 import { createWorld } from './game/world.js';
 import { Player, createInput } from './game/player.js';
@@ -89,7 +90,8 @@ async function boot() {
   const graph = buildRoadGraph(map, hf);
   const traffic = createTraffic(map, hf, csm, graph);
   const parked = createParked(map, hf, csm, graph);
-  scene.add(traffic.group, parked.group);
+  const transit = createTransit(map, hf, csm);
+  scene.add(traffic.group, parked.group, transit.group);
 
   await step('Saddling up', 94);
   const world = createWorld(map, hf, landmarks.colliders || []);
@@ -97,6 +99,13 @@ async function boot() {
   const input = createInput();
   const player = new Player(world, input);
   scene.add(player.object);
+  player.obstacles = (x, z) => {
+    const out = [];
+    for (const c of traffic.cars) if (Math.abs(c.s.x - x) < 10 && Math.abs(c.s.z - z) < 10) out.push({ x: c.s.x, z: c.s.z, y: c.y, yaw: c.yaw, len: c.len - 0.3, w: 1.8 });
+    for (const v of transit.vehicles) if (v !== player.riding && Math.abs(v.x - x) < 14 && Math.abs(v.z - z) < 14) out.push(v);
+    for (const s of parked.nearby(x, z, 6)) out.push({ x: s.x, z: s.z, y: s.y, yaw: s.yaw, len: 4.4, w: 1.8 });
+    return out;
+  };
   const chase = new ChaseCam(camera, world);
   const fly = createFlyCam(camera, renderer.domElement, hf);
   fly.enabled = false;
@@ -119,6 +128,7 @@ async function boot() {
   };
   const bigmap = createBigMap(hudRoot, { map, hf, places, onTeleport: teleport });
 
+  let audio = null; // procedural sound, wired in once available
   let mode = 'menu'; // menu | play | fly
   const menu = createMenu(hudRoot, {
     onStart: () => setMode('play'),
@@ -150,6 +160,16 @@ async function boot() {
       const i = MOUNTS.findIndex(m => m.id === player.mount);
       const next = MOUNTS[(i + 1) % MOUNTS.length];
       player.avatar.setMount(next.id); menu.syncMount(next.id); hud.toast(next.name);
+    }
+    else if (e.code === 'KeyE' && mode === 'play') {
+      if (player.riding) {
+        const v = player.riding, sy = Math.sin(v.yaw), cy = Math.cos(v.yaw);
+        player.riding = null;
+        player.place(v.x + cy * (v.w / 2 + 1.6), v.z - sy * (v.w / 2 + 1.6), v.yaw);
+      } else {
+        const near = transit.nearest(player.pos.x, player.pos.z, 7, 'cablecar');
+        if (near) { player.riding = near; hud.toast(`All aboard the ${near.name} line`); audio?.bell(); }
+      }
     }
     else if (e.code === 'KeyV') setMode(mode === 'fly' ? 'play' : 'fly');
     else if (e.code === 'KeyN') stats.style.display = stats.style.display ? '' : 'none';
@@ -186,7 +206,7 @@ async function boot() {
   const clock = new THREE.Timer();
   renderer.info.autoReset = false;
   let frames = 0, acc = 0, lastFov = camera.fov, menuOrbit = 0;
-  window.__sf = { traffic, parked, weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
+  window.__sf = { transit, traffic, parked, weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
     go: (lat, lon, heading) => { const [x, z] = project(lat, lon); player.place(x, z, heading ?? player.heading); chase.snap = true; } };
 
   function frame() {
@@ -196,7 +216,20 @@ async function boot() {
     renderer.info.reset();
     shared.uTime.value += dt;
 
-    if (mode === 'play' && !bigmap.isOpen) { player.update(dt); chase.update(dt, player); hud.update(dt, player); }
+    if (mode === 'play' && !bigmap.isOpen) {
+      if (player.riding) {
+        const v = player.riding, sy = Math.sin(v.yaw), cy = Math.cos(v.yaw), side = v.w / 2 + 0.3, along = v.len / 2 - 1.6;
+        player.pos.set(v.x + sy * along + cy * side, v.y + 0.3, v.z + cy * along - sy * side);
+        player.heading = v.yaw; player.speed = v.v; player.pitch = v.pitch;
+        player.avatar.animate(dt, 0, 0, false, 0); player.sync();
+        hud.hint(`Riding the ${v.name} line · <kbd>E</kbd> hop off`);
+      } else {
+        player.update(dt);
+        const near = transit.nearest(player.pos.x, player.pos.z, 7, 'cablecar');
+        hud.hint(near && Math.abs(player.speed) < 7 ? `<kbd>E</kbd> hop on the ${near.name} cable car` : '');
+      }
+      chase.update(dt, player); hud.update(dt, player);
+    }
     else if (mode === 'menu') {
       // a slow cinematic orbit around the rider
       player.update(dt);
@@ -209,6 +242,7 @@ async function boot() {
 
     weather.update(dt, camera);
     traffic.update(dt, mode === 'play' ? player.pos : camera.position, mode === 'play' ? player : null);
+    transit.update(dt);
     parked.update(camera.position);
     sky.follow(camera);
     trees.userData.update(camera.position);

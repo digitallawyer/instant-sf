@@ -25,6 +25,7 @@ export function createHud(root, { map, hf, world, places }) {
       <div class="gauges panel"><div class="g-speed"><b>0</b><span>mph</span></div><div class="g-row"><span class="g-elev"></span><span class="g-grade"></span></div></div>
       <div class="hud-buttons"><button class="hb" data-act="menu">Menu</button><button class="hb" data-act="map">Map <kbd>M</kbd></button></div>
       <div class="toast"></div>
+      <div class="hint panel"></div>
     </div>`);
   const el = $('.hud-game', root);
   const mm = $('.minimap', el), mmCtx = mm.getContext('2d');
@@ -60,8 +61,11 @@ export function createHud(root, { map, hf, world, places }) {
   };
   const arrow = deg => `<i class="arr" style="transform:rotate(${deg.toFixed(0)}deg)">↑</i>`;
 
+  const hintEl = $('.hint', el);
+  let hintText = '';
   return {
     el,
+    hint(text) { if (text === hintText) return; hintText = text; hintEl.innerHTML = text || ''; hintEl.classList.toggle('on', !!text); },
     toast(msg, ms = 2600) { toastEl.textContent = msg; toastEl.classList.add('on'); toastT = ms / 1000; },
     show(on) { el.style.display = on ? '' : 'none'; },
     update(dt, player) {
