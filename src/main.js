@@ -9,6 +9,7 @@ import { createRoads } from './engine/roads.js';
 import { createWater } from './engine/water.js';
 import { createTrees } from './engine/trees.js';
 import { createFurniture } from './engine/furniture.js';
+import { createWeather } from './engine/weather.js';
 import { createFlyCam } from './engine/flycam.js';
 import { createWorld } from './game/world.js';
 import { Player, createInput } from './game/player.js';
@@ -93,6 +94,8 @@ async function boot() {
   const fly = createFlyCam(camera, renderer.domElement, hf);
   fly.enabled = false;
 
+  const weather = createWeather(scene, sky);
+  if (params.get('w')) weather.set(params.get('w'), true);
   const [sx, sz] = project(START.lat, START.lon);
   player.place(sx, sz, START.heading);
   sky.setHour(+params.get('t') || 16.6);
@@ -145,8 +148,7 @@ async function boot() {
     else if (e.code === 'KeyN') stats.style.display = stats.style.display ? '' : 'none';
     else if (e.code === 'BracketRight') sky.setHour(sky.state.hour + 0.25);
     else if (e.code === 'BracketLeft') sky.setHour(sky.state.hour - 0.25);
-    else if (e.code === 'KeyF') { const L = [0, 0.3, 0.6, 0.9]; sky.setKarl(L[(L.indexOf(sky.state.karl) + 1) % L.length]); }
-    else if (e.code === 'KeyR') shared.uWet.value = shared.uWet.value > 0.5 ? 0 : 1;
+    else if (e.code === 'KeyF' || e.code === 'KeyR') hud.toast('Weather: ' + weather.cycle());
     else if (mode === 'fly' && VIEWS[e.code]) {
       const v = VIEWS[e.code];
       const c = at(v.cam[0], v.cam[1]);
@@ -177,7 +179,7 @@ async function boot() {
   const clock = new THREE.Timer();
   renderer.info.autoReset = false;
   let frames = 0, acc = 0, lastFov = camera.fov, menuOrbit = 0;
-  window.__sf = { landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
+  window.__sf = { weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
     go: (lat, lon, heading) => { const [x, z] = project(lat, lon); player.place(x, z, heading ?? player.heading); chase.snap = true; } };
 
   function frame() {
@@ -198,6 +200,7 @@ async function boot() {
     } else if (mode === 'fly') fly.update(dt);
     if (Math.abs(camera.fov - lastFov) > 0.8) { lastFov = camera.fov; csm.updateFrustums(); }
 
+    weather.update(dt, camera);
     sky.follow(camera);
     trees.userData.update(camera.position);
     landmarks.update(dt, camera);

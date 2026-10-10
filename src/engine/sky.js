@@ -110,7 +110,7 @@ export function createSky(renderer, scene) {
 
   scene.fog = new THREE.Fog(0xffffff, 0, 400);
 
-  const state = { hour: 17.6, karl: 0.0, haze: 0, clouds: 0.35, sunDir: shared.uSunDir.value, sunColor: new THREE.Color(), sunIntensity: 3, ambient: 1, elev: 0, lastEnvKey: '' };
+  const state = { hour: 17.6, karl: 0.0, haze: 0, overcast: 0, clouds: 0.35, sunDir: shared.uSunDir.value, sunColor: new THREE.Color(), sunIntensity: 3, ambient: 1, elev: 0, lastEnvKey: '' };
 
   function apply() {
     const { elev, dir } = sunPosition(state.hour);
@@ -118,9 +118,11 @@ export function createSky(renderer, scene) {
     // below the horizon the "sun" light becomes the moon, high in the opposite sky
     const p = palette(elev);
     shared.uSunDir.value.copy(dir);
-    const fogAmt = state.karl;
+    const fogAmt = state.karl, oc = state.overcast;
     const zen = new THREE.Color().fromArray(p.zen), hor = new THREE.Color().fromArray(p.hor);
     const grey = new THREE.Color(0.62, 0.64, 0.67).multiplyScalar(Math.max(0.03, p.amb));
+    // overcast: a flat grey lid
+    zen.lerp(grey.clone().multiplyScalar(0.8), oc * 0.85); hor.lerp(grey, oc * 0.7);
     // Karl desaturates everything towards a cool grey
     hor.lerp(grey, fogAmt * 0.7); zen.lerp(grey, fogAmt * 0.45);
     uniforms.uZenith.value.copy(zen);
@@ -136,11 +138,11 @@ export function createSky(renderer, scene) {
 
     scene.fog.color.copy(fogCol);
     scene.fog.near = fogAmt * fogAmt * 0.006;                       // low layer density
-    const haze = Math.min(0.999, (0.000035 + fogAmt * 0.00012 + state.haze) / 0.0003);
+    const haze = Math.min(0.999, (0.000035 + fogAmt * 0.00012 + oc * 0.00008 + state.haze) / 0.0003);
     scene.fog.far = Math.floor(50 + fogAmt * 110) + haze;          // layer height + haze
 
     state.sunColor.fromArray(p.sun);
-    state.sunIntensity = p.sunI * (1 - fogAmt * 0.75);
+    state.sunIntensity = p.sunI * (1 - fogAmt * 0.75) * (1 - oc * 0.85);
     state.ambient = p.amb * (1 - fogAmt * 0.2);
     if (elev < -4) { // moonlight
       state.sunColor.setRGB(0.55, 0.65, 0.95);
@@ -149,7 +151,7 @@ export function createSky(renderer, scene) {
       shared.uSunDir.value.copy(m.normalize());
     }
 
-    const key = [Math.round(elev * 2), Math.round(fogAmt * 20), Math.round(state.clouds * 10)].join();
+    const key = [Math.round(elev * 2), Math.round(fogAmt * 20), Math.round(state.clouds * 10), Math.round(oc * 10)].join();
     if (key !== state.lastEnvKey) {
       state.lastEnvKey = key;
       envDome.material.uniforms.uSunDir = { value: dir.clone() };
