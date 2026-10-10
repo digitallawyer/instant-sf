@@ -62,7 +62,55 @@ class GeoBuilder {
   }
 }
 
-function addBuilding(gb, b, index) {
+// SF row-house dressing on the street side: an angled bay window running up the upper floors and a
+// bracketed cornice along the roofline.
+function addHouseFront(gb, b, seed, wall, edge, eaveTop, cornice) {
+  const p = b.p, n = p.length / 2, i = edge, j = (i + 1) % n;
+  const x0 = p[i * 2], z0 = p[i * 2 + 1], x1 = p[j * 2], z1 = p[j * 2 + 1];
+  const len = Math.hypot(x1 - x0, z1 - z0);
+  const dx = (x1 - x0) / len, dz = (z1 - z0) / len, nx = dz, nz = -dx;
+  const top = eaveTop, colW = 2.2 + seed * 0.5;
+  const trimRnd = (seed * 977) % 1;
+  const trim = trimRnd < 0.6 ? new THREE.Color(0.93, 0.92, 0.88) : trimRnd < 0.8 ? new THREE.Color(0.32, 0.36, 0.4) : wall.clone().multiplyScalar(0.7);
+  const infoW = [seed, 1, b.h, 0], infoT = [seed, 1, b.h, 2];
+  const quad = (ax, az, bx, bz, y0, y1, u0, u1, col, info) => {
+    const fx = bz - az, fz = -(bx - ax), fl = Math.hypot(fx, fz) || 1;
+    const q = [gb.vert(ax, y0, az, fx / fl, 0, fz / fl, u0, y0 - b.b, col, info), gb.vert(bx, y0, bz, fx / fl, 0, fz / fl, u1, y0 - b.b, col, info),
+      gb.vert(bx, y1, bz, fx / fl, 0, fz / fl, u1, y1 - b.b, col, info), gb.vert(ax, y1, az, fx / fl, 0, fz / fl, u0, y1 - b.b, col, info)];
+    gb.idx.push(q[0], q[2], q[1], q[0], q[3], q[2]);
+  };
+  const cap = (pts, y, up, col, info) => {
+    const base = gb.n;
+    for (const [x, z] of pts) gb.vert(x, y, z, 0, up, 0, x, z, col, info);
+    for (let k = 1; k < pts.length - 1; k++) gb.tri(base, base + k, base + k + 1, 0, up, 0);
+  };
+  // bay window: off-centre on wide lots (door beside it), centred on narrow ones
+  if (len > 4.2 && b.h > 6.5) {
+    const W = Math.min(3.6, len * 0.55), Wf = W * 0.56, D = 0.85;
+    const off = len > 6.5 ? len * 0.22 : 0;
+    const cx = (x0 + x1) / 2 + dx * off, cz = (z0 + z1) / 2 + dz * off;
+    const A = [cx - dx * W / 2, cz - dz * W / 2], B = [cx + dx * W / 2, cz + dz * W / 2];
+    const A2 = [cx - dx * Wf / 2 + nx * D, cz - dz * Wf / 2 + nz * D], B2 = [cx + dx * Wf / 2 + nx * D, cz + dz * Wf / 2 + nz * D];
+    const y0 = b.b + (b.h > 10.5 ? 3.3 : 0.7), y1 = top - 0.95;
+    const k0 = 1000;
+    quad(A[0], A[1], A2[0], A2[1], y0, y1, k0 * colW, (k0 + 1) * colW, wall, infoW);
+    quad(A2[0], A2[1], B2[0], B2[1], y0, y1, (k0 + 2) * colW, (k0 + 3) * colW, wall, infoW);
+    quad(B2[0], B2[1], B[0], B[1], y0, y1, (k0 + 4) * colW, (k0 + 5) * colW, wall, infoW);
+    cap([A, A2, B2, B], y1, 1, trim, infoT);
+    cap([A, B, B2, A2], y0, -1, trim, infoT);
+  }
+  if (!cornice) return;
+  // cornice: a projecting box along the roofline
+  const o = 0.42, h0 = top - 0.62, h1 = top + 0.06;
+  const C0 = [x0 + nx * o, z0 + nz * o], C1 = [x1 + nx * o, z1 + nz * o];
+  quad(C0[0], C0[1], C1[0], C1[1], h0, h1, 0, len, trim, infoT);
+  cap([[x0, z0], [x1, z1], C1, C0], h1, 1, trim, infoT);
+  cap([[x0, z0], C0, C1, [x1, z1]], h0, -1, trim, infoT);
+  quad(x0, z0, C0[0], C0[1], h0, h1, 0, o, trim, infoT);
+  quad(C1[0], C1[1], x1, z1, h0, h1, 0, o, trim, infoT);
+}
+
+function addBuilding(gb, b, index, frontOf) {
   const rnd = rand(index * 7919 + 13);
   const p = b.p;
   const n = p.length / 2;
@@ -75,21 +123,57 @@ function addBuilding(gb, b, index) {
   const infoR = [seed, kind, b.h, 1];
   const vBase = b.b - bottom; // façade v is metres above the ground line, so floors line up with the street
 
+  // pitched roofs: ridge along the longer side of the footprint's oriented box (so on SF row houses
+  // the gable faces the street), eaves lowered so the total height stays the mapped one
+  let roof = null;
+  if (/^(gabled|hipped|half-hipped|gambrel|saltbox|mansard)$/.test(b.rs || '') && n >= 4 && b.h > 4) {
+    let bestL = 0, ax = 1, az = 0;
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n, dx = p[j * 2] - p[i * 2], dz = p[j * 2 + 1] - p[i * 2 + 1], L = Math.hypot(dx, dz);
+      if (L > bestL) { bestL = L; ax = dx / L; az = dz / L; }
+    }
+    let px = -az, pz = ax;
+    const ext = (ux, uz) => { let lo = Infinity, hi = -Infinity; for (let i = 0; i < n; i++) { const v = p[i * 2] * ux + p[i * 2 + 1] * uz; lo = Math.min(lo, v); hi = Math.max(hi, v); } return [lo, hi]; };
+    let [a0, a1] = ext(ax, az), [p0, p1] = ext(px, pz);
+    if (p1 - p0 > a1 - a0) { [ax, az, px, pz] = [px, pz, ax, az]; [a0, a1, p0, p1] = [p0, p1, a0, a1]; }
+    const halfW = (p1 - p0) / 2;
+    const rh = Math.min(b.h * 0.42, halfW * (0.85 + seed * 0.35));
+    roof = { px, pz, pc: (p0 + p1) / 2, halfW, rh, eave: top - rh };
+  }
+  const topAt = (x, z) => roof ? roof.eave + roof.rh * Math.max(0, 1 - Math.abs(x * roof.px + z * roof.pz - roof.pc) / roof.halfW) : top;
+
   // walls (rings are normalised so the signed area is positive in x/z, i.e. clockwise seen from above:
   // the outward normal of an edge is (dz, -dx))
   let u = 0;
+  const wallQuad = (x0, z0, x1, z1, u0, u1, nx, nz) => {
+    const t0 = topAt(x0, z0), t1 = topAt(x1, z1);
+    const a = gb.vert(x0, bottom, z0, nx, 0, nz, u0, -vBase + (b.m || 0), wall, infoW);
+    const bb = gb.vert(x1, bottom, z1, nx, 0, nz, u1, -vBase + (b.m || 0), wall, infoW);
+    const c = gb.vert(x1, t1, z1, nx, 0, nz, u1, t1 - b.b, wall, infoW);
+    const d = gb.vert(x0, t0, z0, nx, 0, nz, u0, t0 - b.b, wall, infoW);
+    gb.idx.push(a, c, bb, a, d, c);
+  };
   for (let i = 0; i < n; i++) {
     const j = (i + 1) % n;
     const x0 = p[i * 2], z0 = p[i * 2 + 1], x1 = p[j * 2], z1 = p[j * 2 + 1];
     const dx = x1 - x0, dz = z1 - z0, len = Math.hypot(dx, dz);
     if (len < 0.05) continue;
     const nx = dz / len, nz = -dx / len;
-    const a = gb.vert(x0, bottom, z0, nx, 0, nz, u, -vBase + (b.m || 0), wall, infoW);
-    const bb = gb.vert(x1, bottom, z1, nx, 0, nz, u + len, -vBase + (b.m || 0), wall, infoW);
-    const c = gb.vert(x1, top, z1, nx, 0, nz, u + len, b.h, wall, infoW);
-    const d = gb.vert(x0, top, z0, nx, 0, nz, u, b.h, wall, infoW);
-    gb.idx.push(a, c, bb, a, d, c);
-    u += len + 0.0;
+    if (roof) { // split the wall where it passes under the ridge, so the gable peaks there
+      const s0 = x0 * roof.px + z0 * roof.pz - roof.pc, s1 = x1 * roof.px + z1 * roof.pz - roof.pc;
+      if ((s0 < 0) !== (s1 < 0) && Math.abs(s0 - s1) > 1e-6) {
+        const t = s0 / (s0 - s1), xm = x0 + dx * t, zm = z0 + dz * t;
+        wallQuad(x0, z0, xm, zm, u, u + len * t, nx, nz);
+        wallQuad(xm, zm, x1, z1, u + len * t, u + len, nx, nz);
+        u += len; continue;
+      }
+    }
+    wallQuad(x0, z0, x1, z1, u, u + len, nx, nz);
+    u += len;
+  }
+  if (frontOf && (kind === 1 || kind === 0) && b.h > 5 && b.h < 16 && !b.part) {
+    const e = frontOf(b);
+    if (e >= 0) addHouseFront(gb, b, seed, wall, e, roof ? roof.eave : top, !roof);
   }
 
   // roof
@@ -99,6 +183,28 @@ function addBuilding(gb, b, index) {
   for (let i = 0; i < n; i++) contour.push(new THREE.Vector2(p[i * 2], p[i * 2 + 1]));
   let tris;
   try { tris = THREE.ShapeUtils.triangulateShape(contour, []); } catch { tris = []; }
+  if (roof) {
+    const shingles = parseColour(b.rc) || new THREE.Color(['#4a4744', '#5a5550', '#3f4246', '#6b5f55', '#54504c'][Math.floor(rnd() * 5)]);
+    const k = roof.rh / roof.halfW;
+    for (const side of [1, -1]) {
+      const f = (x, z) => side * (x * roof.px + z * roof.pz - roof.pc);
+      const pts = [];
+      for (let i = 0; i < n; i++) {
+        const cx = p[i * 2], cz = p[i * 2 + 1], ii = (i + n - 1) % n, qx = p[ii * 2], qz = p[ii * 2 + 1];
+        const fc = f(cx, cz), fp = f(qx, qz);
+        if ((fc >= 0) !== (fp >= 0)) { const t = fp / (fp - fc); pts.push([qx + (cx - qx) * t, qz + (cz - qz) * t]); }
+        if (fc >= 0) pts.push([cx, cz]);
+      }
+      if (pts.length < 3) continue;
+      let tr;
+      try { tr = THREE.ShapeUtils.triangulateShape(pts.map(([x, z]) => new THREE.Vector2(x, z)), []); } catch { continue; }
+      const nx = side * roof.px * k, nz = side * roof.pz * k, nl = Math.hypot(nx, 1, nz);
+      const base = gb.n;
+      for (const [x, z] of pts) gb.vert(x, topAt(x, z), z, nx / nl, 1 / nl, nz / nl, x, z, shingles, infoR);
+      for (const t of tr) gb.tri(base + t[0], base + t[1], base + t[2], 0, 1, 0);
+    }
+    return;
+  }
   const pyramid = b.rs === 'pyramidal' || b.rs === 'spire' || b.rs === 'cone';
   const dome = b.rs === 'dome' || b.rs === 'onion';
   // flat roofs sit a little below a parapet (SF's false fronts and downtown parapets)
@@ -330,6 +436,42 @@ export function createBuildings(map, csm) {
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += gEmit;');
   });
 
+  // which edge of a row house faces the street: probe outwards from each edge's midpoint
+  const RG = 30, roadGrid = new Map();
+  for (const r of map.roads) {
+    if (r.k > 6 || r.br) continue;
+    for (let i = 0; i < r.p.length / 2 - 1; i++) {
+      const s = [r.p[i * 2], r.p[i * 2 + 1], r.p[i * 2 + 2], r.p[i * 2 + 3], r.w / 2];
+      for (let gx = Math.floor(Math.min(s[0], s[2]) / RG); gx <= Math.floor(Math.max(s[0], s[2]) / RG); gx++)
+        for (let gz = Math.floor(Math.min(s[1], s[3]) / RG); gz <= Math.floor(Math.max(s[1], s[3]) / RG); gz++) {
+          const k = gx + ',' + gz; let l = roadGrid.get(k); if (!l) roadGrid.set(k, l = []); l.push(s);
+        }
+    }
+  }
+  const roadDist = (x, z) => {
+    let best = Infinity;
+    for (let gx = Math.floor(x / RG) - 1; gx <= Math.floor(x / RG) + 1; gx++) for (let gz = Math.floor(z / RG) - 1; gz <= Math.floor(z / RG) + 1; gz++)
+      for (const s of roadGrid.get(gx + ',' + gz) || []) {
+        const dx = s[2] - s[0], dz = s[3] - s[1], L = dx * dx + dz * dz || 1;
+        const t = Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / L));
+        best = Math.min(best, Math.hypot(x - s[0] - dx * t, z - s[1] - dz * t) - s[4]);
+      }
+    return best;
+  };
+  const frontOf = b => {
+    const p = b.p, n = p.length / 2;
+    let best = -1, bd = 9;
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n, x0 = p[i * 2], z0 = p[i * 2 + 1], x1 = p[j * 2], z1 = p[j * 2 + 1];
+      const len = Math.hypot(x1 - x0, z1 - z0);
+      if (len < 4 || len > 16) continue;
+      const nx = (z1 - z0) / len, nz = -(x1 - x0) / len;
+      const d = roadDist((x0 + x1) / 2 + nx * 2, (z0 + z1) / 2 + nz * 2);
+      if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+  };
+
   const chunks = new Map();
   map.buildings.forEach((b, i) => {
     const p = b.p;
@@ -338,7 +480,7 @@ export function createBuildings(map, csm) {
     const key = Math.floor(cx / CHUNK) + ',' + Math.floor(cz / CHUNK);
     let gb = chunks.get(key);
     if (!gb) chunks.set(key, gb = new GeoBuilder());
-    addBuilding(gb, b, i);
+    addBuilding(gb, b, i, frontOf);
   });
 
   const group = new THREE.Group();
