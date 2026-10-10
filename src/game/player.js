@@ -24,7 +24,9 @@ export class Player {
     this.frozen = false;
     this.obstacles = null; // () => [{ x, z, y, yaw, len, w }] moving vehicles to bump into
     this.riding = null;    // a transit vehicle we're hanging on to
+    this.fx = { spin: 0, boost: 0, slow: 0 }; // race item effects, seconds remaining
   }
+  spinOut(t = 1.6) { this.fx.spin = Math.max(this.fx.spin, t); }
   get mount() { return this.avatar.mount; }
   place(x, z, heading = this.heading) {
     this.pos.set(x, 0, z);
@@ -39,14 +41,17 @@ export class Player {
   update(dt) {
     this.time += dt;
     const I = this.input;
-    const max = MAX[this.mount] * (I.boost ? 1.0 : 1.0);
-    const steerIn = (I.right ? 1 : 0) - (I.left ? 1 : 0) + (I.steerAxis || 0);
+    const eff = this.fx;
+    for (const k in eff) eff[k] = Math.max(0, eff[k] - dt);
+    const max = MAX[this.mount] * (eff.boost > 0 ? 1.55 : 1) * (eff.slow > 0 ? 0.55 : 1);
+    let steerIn = (I.right ? 1 : 0) - (I.left ? 1 : 0) + (I.steerAxis || 0);
+    if (eff.spin > 0) { steerIn = Math.sin(this.time * 18) * 1.5; this.speed *= Math.max(0, 1 - dt * 2.2); }
     this.steer += (Math.max(-1, Math.min(1, steerIn)) - this.steer) * Math.min(1, dt * 8);
 
     if (!this.frozen) {
       // throttle and brakes
       const throttle = (I.up ? 1 : 0) - (I.down ? 1 : 0) + (I.throttleAxis || 0);
-      if (throttle > 0) this.speed += ACCEL * throttle * dt * (this.speed < 0 ? 2 : 1);
+      if (throttle > 0) this.speed += ACCEL * throttle * dt * (this.speed < 0 ? 2 : 1) * (eff.boost > 0 ? 1.8 : 1);
       else if (throttle < 0) this.speed -= (this.speed > 0.2 ? BRAKE : ACCEL * 0.6) * -throttle * dt;
       else this.speed -= Math.sign(this.speed) * Math.min(Math.abs(this.speed), DRAG * dt * (1 + Math.abs(this.speed) * 0.15));
       // gravity along the slope (SF!): downhill speeds you up, uphill slows you

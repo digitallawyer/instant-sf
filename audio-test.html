@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Audio Test Bench</title>
+<style>
+  :root { --bg: #f4f2ee; --fg: #1d1d1f; --muted: #6b6b70; --card: #fff; --line: #ddd8cf; --accent: #c0362c; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #17171a; --fg: #ececf0; --muted: #9a9aa3; --card: #222226; --line: #34343a; --accent: #ff6a5c; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; font: 14px/1.4 system-ui, sans-serif; background: var(--bg); color: var(--fg); }
+  h1 { font-size: 18px; margin: 0 0 4px; } h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 12px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  label.row { display: grid; grid-template-columns: 90px 1fr 52px; align-items: center; gap: 8px; margin: 4px 0; }
+  label.row output { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  input[type=range] { width: 100%; }
+  button { font: inherit; padding: 6px 10px; margin: 3px; border-radius: 7px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  select { font: inherit; padding: 3px; }
+  pre { font: 12px/1.35 ui-monospace, Menlo, monospace; overflow-x: auto; white-space: pre; margin: 0; }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<h1>Instant SF: audio bench</h1>
+<div class="muted">Dev page for <code>src/engine/audio.js</code>. Everything is synthesised. Click <b>Unlock</b> first.</div>
+<div style="margin-top:8px">
+  <button id="unlock" class="primary">Unlock audio</button>
+  <button id="mute">Mute</button>
+  <button id="music">Music: off</button>
+  <span id="dbg" class="muted"></span>
+</div>
+
+<div class="grid">
+  <section>
+    <h2>Player</h2>
+    <label class="row">mount <select id="mount"><option>bike</option><option selected>walk</option><option>skate</option><option>sealion</option></select><span></span></label>
+    <label class="row">surface <select id="surface"><option selected>ground</option><option>deck</option><option>pier</option><option>water</option></select><span></span></label>
+    <label class="row">speed <input type="range" id="speed" min="-5" max="20" step="0.1" value="0"><output></output></label>
+    <label class="row">grade <input type="range" id="grade" min="-0.2" max="0.2" step="0.005" value="0"><output></output></label>
+    <label class="row">height <input type="range" id="height" min="0" max="80" step="0.5" value="5"><output></output></label>
+    <label class="row">air <input type="checkbox" id="air"><span></span></label>
+    <label class="row">braking <input type="checkbox" id="braking"><span></span></label>
+    <label class="row">pedal <select id="pedal"><option value="auto" selected>infer</option><option value="true">pedalling</option><option value="false">coasting</option></select><span></span></label>
+  </section>
+  <section>
+    <h2>World</h2>
+    <label class="row">fog <input type="range" id="fog" min="0" max="1" step="0.01" value="0"><output></output></label>
+    <label class="row">night <input type="range" id="night" min="0" max="1" step="0.01" value="0"><output></output></label>
+    <label class="row">wet <input type="range" id="wet" min="0" max="1" step="0.01" value="0"><output></output></label>
+    <label class="row">nearWater <input type="range" id="nearWater" min="0" max="1" step="0.01" value="0"><output></output></label>
+    <label class="row">traffic <input type="range" id="traffic" min="0" max="1" step="0.01" value="0.4"><output></output></label>
+    <div style="margin-top:6px">
+      <button data-preset="gg">Golden Gate in fog</button>
+      <button data-preset="pier39">Pier 39</button>
+      <button data-preset="mission">Mission at night</button>
+      <button data-preset="rain">Rainy downtown</button>
+      <button data-preset="swim">Swim the Bay</button>
+      <button data-preset="reset">Reset</button>
+    </div>
+  </section>
+  <section>
+    <h2>One-shots</h2>
+    <button data-shot="jump">jump</button>
+    <button data-shot="land" data-arg="0.3">land 0.3</button>
+    <button data-shot="land" data-arg="1">land 1</button>
+    <button data-shot="bump" data-arg="0.5">bump 0.5</button>
+    <button data-shot="bump" data-arg="1">bump 1</button>
+    <button data-shot="bell">bell</button>
+    <button data-shot="horn">horn</button>
+    <button data-shot="bark">bark</button>
+    <button data-shot="foghorn">foghorn</button>
+    <button data-shot="pickup">pickup</button>
+    <button data-shot="race">countdown 3-2-1-GO</button>
+    <button data-shot="finish">finish</button>
+    <button data-shot="fail">fail</button>
+    <button data-shot="ui">ui</button>
+    <h2 style="margin-top:10px">Ambient events (normally random)</h2>
+    <button data-amb="birds">birds</button>
+    <button data-amb="gulls">gulls</button>
+    <button data-amb="siren">siren</button>
+    <button data-amb="grunt">sea lion grunt</button>
+    <button data-amb="foghornFar">far foghorn</button>
+    <button data-amb="hornFar">far horn</button>
+    <button data-amb="barkFar">far barks</button>
+  </section>
+</div>
+
+<section style="margin-top:12px">
+  <h2>Offline level report</h2>
+  <button id="report">Render report (OfflineAudioContext)</button> <span id="reportStatus" class="muted"></span>
+  <pre id="reportOut"></pre>
+</section>
+
+<script type="module">
+import { createAudio } from '/src/engine/audio.js';
+import { runOfflineReport, formatReport } from '/src/engine/audio/offline-check.js';
+
+const audio = createAudio();
+window.audio = audio;
+const $ = id => document.getElementById(id);
+const sliders = ['speed', 'grade', 'height', 'fog', 'night', 'wet', 'nearWater', 'traffic'];
+const showVal = el => { const o = el.parentElement.querySelector('output'); if (o) o.textContent = (+el.value).toFixed(2); };
+for (const id of sliders) { $(id).addEventListener('input', e => showVal(e.target)); showVal($(id)); }
+
+$('unlock').onclick = async () => { const ok = await audio.unlock(); $('unlock').textContent = ok ? 'Audio unlocked' : 'Unlock failed'; };
+$('mute').onclick = () => { audio.unlock(); audio.setMuted(!audio.muted); $('mute').textContent = audio.muted ? 'Unmute' : 'Mute'; };
+$('music').onclick = () => { audio.unlock(); audio.setMusic(!audio.music); $('music').textContent = 'Music: ' + (audio.music ? 'on' : 'off'); };
+
+document.querySelectorAll('[data-shot]').forEach(b => b.addEventListener('click', () => {
+  audio.unlock();
+  const s = b.dataset.shot, arg = b.dataset.arg !== undefined ? +b.dataset.arg : undefined;
+  if (s === 'race') { [3, 2, 1, 0].forEach((n, i) => setTimeout(() => audio.countdown(n), i * 1000)); return; }
+  audio[s](arg);
+}));
+document.querySelectorAll('[data-amb]').forEach(b => b.addEventListener('click', () => {
+  audio.unlock();
+  const e = audio._engine; if (e) e._amb[b.dataset.amb](1);
+}));
+
+const PRESETS = {
+  gg: { mount: 'bike', surface: 'deck', speed: 9, height: 67, fog: 0.85, night: 0.1, wet: 0, nearWater: 0.5, traffic: 0.6, grade: 0 },
+  pier39: { mount: 'walk', surface: 'pier', speed: 1.3, height: 3, fog: 0.2, night: 0, wet: 0, nearWater: 1, traffic: 0.3, grade: 0 },
+  mission: { mount: 'skate', surface: 'ground', speed: 5, height: 20, fog: 0, night: 0.9, wet: 0, nearWater: 0, traffic: 0.5, grade: 0 },
+  rain: { mount: 'walk', surface: 'ground', speed: 1.4, height: 15, fog: 0.3, night: 0.3, wet: 0.9, nearWater: 0, traffic: 0.8, grade: 0 },
+  swim: { mount: 'sealion', surface: 'water', speed: 3, height: 0, fog: 0.3, night: 0, wet: 0, nearWater: 1, traffic: 0.1, grade: 0 },
+  reset: { mount: 'walk', surface: 'ground', speed: 0, height: 5, fog: 0, night: 0, wet: 0, nearWater: 0, traffic: 0.4, grade: 0 },
+};
+document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+  const p = PRESETS[b.dataset.preset];
+  for (const [k, v] of Object.entries(p)) { $(k).value = v; if (sliders.includes(k)) showVal($(k)); }
+}));
+
+const state = () => {
+  const s = { mount: $('mount').value, surface: $('surface').value, air: $('air').checked, braking: $('braking').checked };
+  for (const id of sliders) s[id] = +$(id).value;
+  if ($('pedal').value !== 'auto') s.pedal = $('pedal').value === 'true';
+  return s;
+};
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  audio.update(dt, state());
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+setInterval(() => {
+  const d = audio.debug();
+  $('dbg').textContent = `ctx: ${d.state}` + (d.voices !== undefined ? ` | voices ${d.voices} | music ${d.musicVoices} | comp ${d.compReduction.toFixed(1)} dB${d.coasting ? ' | coasting' : ''}` : '');
+}, 250);
+
+$('report').onclick = async () => {
+  $('reportStatus').textContent = 'rendering...';
+  try {
+    const rows = await runOfflineReport(n => { $('reportStatus').textContent = 'rendering ' + n; });
+    window.__report = rows;
+    $('reportOut').textContent = formatReport(rows);
+    $('reportStatus').textContent = 'done (dBFS, after compressor + soft clip)';
+  } catch (e) {
+    window.__report = { error: String(e && e.stack || e) };
+    $('reportStatus').textContent = 'error: ' + e;
+    console.error(e);
+  }
+};
+</script>
+</body>
+</html>

@@ -22,8 +22,13 @@ import { buildPlaces } from './game/places.js';
 import { createHud } from './ui/hud.js';
 import { createBigMap } from './ui/bigmap.js';
 import { createMenu } from './ui/menu.js';
+import { createGameHud } from './ui/gamehud.js';
+import { buildStreetGraph } from './game/route.js';
+import { Race, buildRaceTrack } from './game/race.js';
+import { Mission } from './game/missions.js';
+import { Tour } from './game/tour.js';
 import { project, unproject } from './city/region.js';
-import { START } from './city/sf.js';
+import { START, RACES, MISSIONS, SIGHTS } from './city/sf.js';
 import { createLandmarks } from './landmarks/index.js';
 
 const DATA = '/data/sf';
@@ -132,9 +137,49 @@ async function boot() {
   const bigmap = createBigMap(hudRoot, { map, hf, places, onTeleport: teleport });
 
   let audio = null; // procedural sound, wired in once available
-  let mode = 'menu'; // menu | play | fly
+  let mode = 'menu'; // menu | play | fly | tour
+  let game = null;   // the running race / mission / tour, if any
+  let streets = null, raceStreets = null;
+  const getStreets = () => (streets ||= buildStreetGraph(map));
+  const getRaceStreets = () => (raceStreets ||= buildStreetGraph(map, { maxK: 7 }));
+  const ghud = createGameHud(hudRoot, {
+    onAgain: () => { const g = game; endGame(); g && startGame(g.kind, g.def); },
+    onNext: () => {
+      const g = game; endGame();
+      if (!g) return;
+      const list = g.kind === 'race' ? RACES : MISSIONS;
+      startGame(g.kind, list[(list.indexOf(g.def) + 1) % list.length]);
+    },
+    onMenu: () => { endGame(); setMode('menu'); },
+  });
+  function endGame() {
+    if (game?.obj?.dispose) game.obj.dispose();
+    game = null; ghud.clear(); player.frozen = false;
+  }
+  function startGame(kind, def) {
+    endGame();
+    if (kind === 'race') {
+      const track = buildRaceTrack(def, getRaceStreets());
+      if (!track) { hud.toast('Could not plan that route'); return; }
+      game = { kind, def, obj: new Race({ def, track, scene, world, player, hud, audio }) };
+      setMode('play');
+    } else if (kind === 'mission') {
+      game = { kind, def, obj: new Mission({ def, scene, world, player, streets: getStreets(), hud, audio, csm }) };
+      setMode('play');
+    } else if (kind === 'tour') {
+      game = { kind, def, obj: new Tour({ camera, hf, sky, weather, interactive: def === 'interactive' }) };
+      ghud.onTour(() => game?.obj.next(), () => { endGame(); setMode('menu'); });
+      setMode('tour');
+    }
+    chase.snap = true;
+  }
   const menu = createMenu(hudRoot, {
-    onStart: () => setMode('play'),
+    onStart: st => {
+      if (st.mode === 'race') startGame('race', RACES.find(r => r.id === st.race));
+      else if (st.mode === 'missions') startGame('mission', MISSIONS.find(m => m.id === st.mission));
+      else if (st.mode === 'tour') startGame('tour', st.tour);
+      else { endGame(); setMode('play'); }
+    },
     onMount: id => player.avatar.setMount(id),
     onColor: c => player.avatar.setColor(c),
   });
@@ -148,17 +193,37 @@ async function boot() {
     if (m === 'menu') { menu.open(); hud.show(false); bigmap.close(); }
     if (m === 'play') { menu.close(); hud.show(true); chase.snap = true; renderer.domElement.focus(); }
     if (m === 'fly') { menu.close(); hud.show(false); fly.set(camera.position.clone(), chase.look.clone()); }
+    if (m === 'tour') { menu.close(); hud.show(false); bigmap.close(); }
     fly.enabled = m === 'fly';
     input.enabled = m === 'play';
     if (m !== 'play') for (const k of ['up', 'down', 'left', 'right']) input[k] = false;
   }
   setMode(params.has('play') ? 'play' : 'menu');
+  // deep links from the website: ?goto=<sight id>, ?street=<name>, ?place=<name>, ?tour, ?race=<id>, ?mission=<id>
+  {
+    const sight = params.get('goto') && SIGHTS.find(s => s.id === params.get('goto'));
+    const named = params.get('street') || params.get('place');
+    if (sight) { const [x, z] = project(sight.lat, sight.lon); setMode('play'); teleport(x, z, { name: sight.name }); }
+    else if (params.get('x') && params.get('z')) { setMode('play'); teleport(+params.get('x'), +params.get('z'), named ? { name: named } : null); }
+    else if (named) {
+      const p = places.find(q => q.name.toLowerCase() === named.toLowerCase()) || places.find(q => q.name.toLowerCase().includes(named.toLowerCase()));
+      if (p) { setMode('play'); teleport(p.x, p.z, p); }
+    }
+    if (params.has('tour')) startGame('tour', params.get('tour') === 'interactive' ? 'interactive' : 'auto');
+    if (params.get('race')) { const r = RACES.find(x => x.id === params.get('race')); if (r) startGame('race', r); }
+    if (params.get('mission')) { const m = MISSIONS.find(x => x.id === params.get('mission')); if (m) startGame('mission', m); }
+  }
 
   addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT') return;
-    if (e.code === 'Enter' && mode === 'menu') setMode('play');
-    else if (e.code === 'Escape') { if (bigmap.isOpen) bigmap.close(); else setMode(mode === 'menu' ? 'play' : 'menu'); }
-    else if (e.code === 'KeyM' && mode === 'play') bigmap.toggle(player);
+    if (e.code === 'Enter' && mode === 'menu') menu.start();
+    else if (e.code === 'Escape') {
+      if (bigmap.isOpen) bigmap.close();
+      else if (game) { endGame(); setMode('menu'); }
+      else setMode(mode === 'menu' ? 'play' : 'menu');
+    }
+    else if (e.code === 'KeyM' && mode === 'play') { if (game) hud.toast(game.kind === 'mission' ? 'No map during a mission — follow the arrow' : 'No map during a race'); else bigmap.toggle(player); }
+    else if (e.code === 'KeyF' && mode === 'play' && game?.kind === 'race') input.itemPressed = true;
     else if (e.code === 'KeyC' && mode === 'play') {
       const i = MOUNTS.findIndex(m => m.id === player.mount);
       const next = MOUNTS[(i + 1) % MOUNTS.length];
@@ -178,7 +243,8 @@ async function boot() {
     else if (e.code === 'KeyN') stats.style.display = stats.style.display ? '' : 'none';
     else if (e.code === 'BracketRight') sky.setHour(sky.state.hour + 0.25);
     else if (e.code === 'BracketLeft') sky.setHour(sky.state.hour - 0.25);
-    else if (e.code === 'KeyF' || e.code === 'KeyR') hud.toast('Weather: ' + weather.cycle());
+    else if (e.code === 'KeyR' && !game) hud.toast('Weather: ' + weather.cycle());
+    else if ((e.code === 'Space' || e.code === 'ArrowRight' || e.code === 'Enter') && mode === 'tour' && game?.obj.interactive) game.obj.next();
     else if (mode === 'fly' && VIEWS[e.code]) {
       const v = VIEWS[e.code];
       const c = at(v.cam[0], v.cam[1]);
@@ -209,7 +275,7 @@ async function boot() {
   const clock = new THREE.Timer();
   renderer.info.autoReset = false;
   let frames = 0, acc = 0, lastFov = camera.fov, menuOrbit = 0;
-  window.__sf = { fly, people, critters, transit, traffic, parked, weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
+  window.__sf = { startGame, endGame, get game() { return game; }, fly, people, critters, transit, traffic, parked, weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
     go: (lat, lon, heading) => { const [x, z] = project(lat, lon); player.place(x, z, heading ?? player.heading); chase.snap = true; } };
 
   function frame() {
@@ -232,6 +298,17 @@ async function boot() {
         hud.hint(near && Math.abs(player.speed) < 7 ? `<kbd>E</kbd> hop on the ${near.name} cable car` : '');
       }
       chase.update(dt, player); hud.update(dt, player);
+      if (game?.kind === 'race') {
+        const r = game.obj; r.update(dt, input); ghud.race(r);
+        if (r.state === 'finished' && !game.shown) { game.shown = true; setTimeout(() => game?.obj === r && ghud.raceResult(r), 1200); }
+      } else if (game?.kind === 'mission') {
+        const m = game.obj; m.update(dt); ghud.mission(m);
+        if (m.state !== 'running' && !game.shown) { game.shown = true; setTimeout(() => game?.obj === m && ghud.missionResult(m, m.ok), 900); }
+      }
+    }
+    else if (mode === 'tour' && game?.kind === 'tour') {
+      const t = game.obj; t.update(dt); ghud.tour(t.stop, t.interactive);
+      if (t.done) { endGame(); setMode('menu'); }
     }
     else if (mode === 'menu') {
       // a slow cinematic orbit around the rider

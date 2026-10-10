@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>The game · Instant San Francisco</title>
+  <meta name="description" content="What Instant San Francisco is, how to play, the four ways to get around, and how a whole city is built from OpenStreetMap and USGS elevation data and rendered in your browser." />
+  <meta name="theme-color" content="#0e1116" />
+  <meta property="og:title" content="The game · Instant San Francisco" />
+  <meta property="og:image" content="/img/downtown.jpg" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230e1116'/%3E%3Cpath d='M9 24V11M23 24V11M6 15c4 3 16 3 20 0' stroke='%23e5532d' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/site/site.css" />
+  <script>document.documentElement.classList.add('js')</script>
+</head>
+<body data-page="game">
+  <header id="site-header"></header>
+
+  <main id="main" tabindex="-1">
+    <section class="page-hero has-img" aria-labelledby="page-title">
+      <div class="bg"><img src="/img/downtown.jpg" alt="" fetchpriority="high" /></div>
+      <div class="wrap">
+        <p class="kicker">Instant San Francisco</p>
+        <h1 class="h1" id="page-title" data-i18n-html="game.title">The <em>game</em></h1>
+        <p class="lede" data-i18n="game.lede">Part game, part model city. Instant San Francisco is a 3D version of the city built from open data, where you ride around, look about and, soon, race and play missions.</p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="/play/"><span data-i18n="btn.play">Play now</span> <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="/play/?tour"><span data-i18n="btn.tour">Virtual tour</span> <span class="tag soon" data-i18n="btn.soon">Coming soon</span></a>
+        </div>
+        <p class="hero-meta">Free · no account · works best on a laptop or desktop with a keyboard</p>
+      </div>
+    </section>
+
+    <section class="section tight" aria-labelledby="what-title">
+      <div class="wrap">
+        <div class="section-head"><h2 class="h2" id="what-title" data-i18n="game.what">So what is it?</h2></div>
+        <div class="cards4 reveal">
+          <div><h3 class="h3">A game</h3><p>Pick a ride and a colour, then go. Find the sights, chase the steepest streets, and soon race and run missions.</p></div>
+          <div><h3 class="h3">A model city</h3><p>Built from open data, not drawn by hand: the buildings, streets, parks, piers and trees are where the map says they are.</p></div>
+          <div><h3 class="h3">A tour <span class="tag soon">Soon</span></h3><p>A guided ride past the landmarks with a short story at every stop, for when you just want to sit back and look.</p></div>
+          <div><h3 class="h3">An experiment</h3><p>How far can a browser go? A whole city, cinematic lighting and fog, in a web page with no plugins.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section tight" aria-labelledby="modes-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <h2 class="h2" id="modes-title" data-i18n="game.modes">Modes</h2>
+            <p class="lede">The same four tabs you see on the start screen.</p>
+          </div>
+        </div>
+        <div class="modes">
+          <div class="mode-card on reveal"><span class="tag live">Playable</span><h3 class="h3">Explore</h3><p>Free roam. Ride anywhere between the Ferry Building, the Marina and the Presidio, with the names of streets and sights popping up as you pass.</p></div>
+          <div class="mode-card reveal d1"><span class="tag soon">Coming soon</span><h3 class="h3">Race</h3><p>Point-to-point sprints across the city, where picking the flat route around a hill can beat the straight line over it.</p></div>
+          <div class="mode-card reveal d2"><span class="tag soon">Coming soon</span><h3 class="h3">Missions</h3><p>Errands against the clock: deliver a sourdough to the Wharf, catch the cable car turnaround, make it to the ballpark by first pitch.</p></div>
+          <div class="mode-card reveal d3"><span class="tag soon">Coming soon</span><h3 class="h3">Tour</h3><p>A guided ride past the sights, with a short story at each stop. Also reachable from the <a href="/play/?tour">Virtual tour</a> button.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section tight" aria-labelledby="rides-title">
+      <div class="wrap">
+        <div class="section-head"><h2 class="h2" id="rides-title" data-i18n="game.rides">Four ways to get around</h2></div>
+        <div class="media-grid">
+          <figure class="reveal">
+            <div class="m"><img src="/img/ride-california.jpg" alt="Cycling down California Street" loading="lazy" /></div>
+            <figcaption><b>Bike</b><span>The default. Fast on the flat, honest on the hills: you feel every percent of grade.</span></figcaption>
+          </figure>
+          <figure class="reveal d1">
+            <div class="m"><img src="/img/street-painted-ladies.jpg" alt="Street-level view of colourful Victorian houses on a sloping street" loading="lazy" /></div>
+            <figcaption><b>On foot</b><span>Slow down and look up. The best way to take in the Painted Ladies or Grant Avenue.</span></figcaption>
+          </figure>
+          <figure class="reveal d2">
+            <div class="m"><img src="/img/skate-steiner.jpg" alt="Skateboarding along Steiner Street" loading="lazy" /></div>
+            <figcaption><b>Skateboard</b><span>Push uphill, bomb downhill. Steiner Street was made for this.</span></figcaption>
+          </figure>
+          <figure class="reveal d3">
+            <div class="m"><img src="/img/sealion-pier39.jpg" alt="A sea lion flopping along the waterfront near Pier 39" loading="lazy" /></div>
+            <figcaption><b>Sea lion</b><span>A Pier 39 regular, out to see the town. Not fast. Very determined.</span></figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section tight" aria-labelledby="controls-title">
+      <div class="wrap">
+        <div class="section-head"><h2 class="h2" id="controls-title" data-i18n="game.controls">Controls</h2></div>
+        <div class="keys">
+          <div class="key"><span><kbd aria-label="Up">↑</kbd><kbd aria-label="Down">↓</kbd><kbd aria-label="Left">←</kbd><kbd aria-label="Right">→</kbd></span>Ride and steer</div>
+          <div class="key"><span><kbd>Space</kbd></span>Jump</div>
+          <div class="key"><span><kbd>M</kbd></span>Big map, search and teleport</div>
+          <div class="key"><span><kbd>C</kbd></span>Change ride</div>
+          <div class="key"><span><kbd>Esc</kbd></span>Menu</div>
+          <div class="key"><span><kbd>Enter</kbd></span>Start riding from the menu</div>
+        </div>
+        <p class="muted small" style="margin-top:18px">Drag with the mouse to look around your rider.</p>
+      </div>
+    </section>
+
+    <section class="section tight" aria-labelledby="weather-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <h2 class="h2" id="weather-title" data-i18n="game.weather">Weather and time</h2>
+            <p class="lede">The sun follows its real path over the city for an October day. Karl the Fog, San Francisco’s famous marine layer, can roll in at any time.</p>
+          </div>
+        </div>
+        <div class="duo">
+          <figure class="reveal"><div class="m"><img src="/img/karl-golden-gate.jpg" alt="Fog hiding most of the Golden Gate Bridge, one tower visible" loading="lazy" /></div><figcaption><b>Karl the Fog.</b> Height fog that thickens near the water and thins out over the hills.</figcaption></figure>
+          <figure class="reveal d1"><div class="m"><img src="/img/night-nob-hill.jpg" alt="Downtown towers at night with lit windows" loading="lazy" /></div><figcaption><b>After dark.</b> Every window is a little room with its own light and blinds.</figcaption></figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="section fog" aria-labelledby="made-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="kicker">Under the hood</p>
+            <h2 class="h2" id="made-title" data-i18n="game.made">How it’s made</h2>
+            <p class="lede">No hand-built levels. The city is generated from public data and rendered live in your browser with three.js.</p>
+          </div>
+        </div>
+        <ol class="pipeline">
+          <li class="reveal">
+            <div><h3 class="h3">The map</h3><p class="flow"><b>Overpass API</b> → OpenStreetMap ways → <b>map.json</b></p></div>
+            <p>A build script pulls buildings with their heights and levels, roads and their widths, parks, piers, rail lines, street trees, traffic signals, crossings, lamps and points of interest for the northeast of the city, then flattens it all into a compact file of about 40,000 building footprints and 17,600 road segments.</p>
+          </li>
+          <li class="reveal">
+            <div><h3 class="h3">The ground</h3><p class="flow"><b>AWS Terrain Tiles</b> (USGS 3DEP) → <b>height field</b></p></div>
+            <p>Elevation tiles are stitched into a height field so every street climbs and drops exactly as it does in real life. Buildings sit on the slope, roads drape over it, and your speed responds to the grade.</p>
+          </li>
+          <li class="reveal">
+            <div><h3 class="h3">The buildings</h3><p class="flow">footprint + height → <b>procedural facades</b></p></div>
+            <p>Footprints are extruded and dressed in procedural facades: floors, window bays, shopfronts and curtain-wall glass, with angled bay windows and bracketed cornices on the row houses. Windows use interior mapping, a shader trick that fakes a real room behind each pane, so the city looks inhabited from any angle.</p>
+          </li>
+          <li class="reveal">
+            <div><h3 class="h3">The light</h3><p class="flow">three.js → <b>cinematic renderer</b></p></div>
+            <p>Cascaded shadow maps keep shadows sharp up close and far away. N8AO adds ambient occlusion in the corners, bloom makes lights glow, AgX tone mapping keeps sunsets from clipping, and height fog gives the Bay its depth.</p>
+          </li>
+        </ol>
+        <ul class="chips-list" style="margin-top:36px" aria-label="Built with">
+          <li>three.js</li><li>postprocessing</li><li>N8AO</li><li>Vite</li><li>Vanilla JavaScript</li><li>OpenStreetMap</li><li>USGS 3DEP</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="faq-title">
+      <div class="wrap narrow">
+        <h2 class="h2" id="faq-title" style="margin-bottom:28px" data-i18n="game.faq">Questions</h2>
+        <div class="faq">
+          <details><summary>Is it really free?</summary><p>Yes. No ads, no account, no in-app purchases. It’s a hobby project.</p></details>
+          <details><summary>Does it work on my phone?</summary><p>It runs in any modern browser with WebGL 2. A laptop or desktop with a keyboard gives the best experience; touch and gamepad controls are planned.</p></details>
+          <details><summary>How much of San Francisco is in it?</summary><p>The northeast of the city: from SoMa and Mission Bay up through downtown, Chinatown, North Beach, Russian and Nob Hill, the Marina and the Presidio to the Golden Gate Bridge, plus Alcatraz out in the Bay.</p></details>
+          <details><summary>My building looks wrong. Why?</summary><p>Buildings come straight from OpenStreetMap. If a height or shape is off, the map probably says so too, and anyone can <a class="textlink" href="https://www.openstreetmap.org/fixthemap" rel="noopener">fix it on OpenStreetMap</a>. The fix will show up the next time the city is rebuilt.</p></details>
+          <details><summary>Is it accurate enough to plan a bike route?</summary><p>Roughly: the hills and streets are real, but it’s a game, not a navigation app. Don’t ride the Embarcadero as a sea lion in real life.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta" style="padding-top:0" aria-labelledby="cta-title">
+      <div class="wrap">
+        <h2 class="statement" id="cta-title" data-i18n-html="home.cta">Your bike is <em>waiting</em>.</h2>
+        <div class="btn-row" style="margin-top:28px">
+          <a class="btn btn-primary" href="/play/"><span data-i18n="btn.play">Play now</span> <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="/sights/" data-i18n="nav.sights">Sights</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script type="module" src="/src/site/site.js"></script>
+</body>
+</html>

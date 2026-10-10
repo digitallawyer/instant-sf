@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Streets &amp; squares of San Francisco, A to Z · Instant San Francisco</title>
+  <meta name="description" content="An A–Z index of every named street, alley, stairway, plaza and park in Instant San Francisco. Pick one and start riding there." />
+  <meta name="theme-color" content="#0e1116" />
+  <meta property="og:title" content="Streets & squares · Instant San Francisco" />
+  <meta property="og:image" content="/img/alamo-aerial.jpg" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230e1116'/%3E%3Cpath d='M9 24V11M23 24V11M6 15c4 3 16 3 20 0' stroke='%23e5532d' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/site/site.css" />
+  <link rel="preload" href="/data/sf/map.json" as="fetch" crossorigin="anonymous" />
+  <script>document.documentElement.classList.add('js')</script>
+</head>
+<body data-page="streets">
+  <header id="site-header"></header>
+
+  <main id="main" tabindex="-1">
+    <section class="page-hero" style="padding-bottom:28px" aria-labelledby="page-title">
+      <div class="wrap">
+        <nav class="subnav" aria-label="Guide">
+          <a href="/sights/" data-i18n="nav.sights">Sights</a>
+          <a href="/eat/" data-i18n="nav.eat">Eat &amp; drink</a>
+          <a href="/streets/" aria-current="page" data-i18n="nav.streets">Streets &amp; squares</a>
+        </nav>
+        <h1 class="h1" id="page-title" data-i18n-html="streets.title">Streets <em>&amp;</em> squares</h1>
+        <p class="lede" style="margin-bottom:0" data-i18n="streets.lede">Every named street, alley, stair, plaza and park in the game, A to Z. Pick one to start riding there.</p>
+      </div>
+    </section>
+
+    <div class="toolbar" role="search">
+      <div class="wrap">
+        <div class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <label class="sr-only" for="q" data-i18n="streets.search">Find a street or square</label>
+          <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Find a street or square" data-i18n-ph="streets.search" />
+        </div>
+        <div class="chips" role="group" aria-label="Kind" id="kinds">
+          <button class="chip" type="button" data-kind="" aria-pressed="true"><span data-i18n="eat.all">All</span> <span class="c" data-count=""></span></button>
+          <button class="chip" type="button" data-kind="street" aria-pressed="false"><span data-i18n="streets.streets">Streets</span> <span class="c" data-count="street"></span></button>
+          <button class="chip" type="button" data-kind="square" aria-pressed="false"><span data-i18n="streets.squares">Squares &amp; parks</span> <span class="c" data-count="square"></span></button>
+        </div>
+      </div>
+      <div class="wrap" style="margin-top:10px">
+        <nav class="letters" id="letters" aria-label="Letters"></nav>
+      </div>
+    </div>
+
+    <section class="section" style="padding-top:0" aria-label="A to Z">
+      <div class="wrap">
+        <p class="result-count" id="count" aria-live="polite"></p>
+        <div id="az">
+          <div class="status"><div class="spin" aria-hidden="true"></div><span data-i18n="ui.loading">Loading the map…</span></div>
+        </div>
+        <p class="muted small" style="margin-top:40px">Street names and lengths come from OpenStreetMap and cover the part of the city in the game. Lengths are summed over every mapped segment, both carriageways included.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script type="module" src="/src/site/site.js"></script>
+  <script type="module" src="/src/site/streets.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Sights in San Francisco: Golden Gate, Coit Tower and more · Instant San Francisco</title>
+  <meta name="description" content="The San Francisco landmarks in Instant San Francisco, from the Ferry Building and Coit Tower to Lombard Street and the Golden Gate Bridge, each with a button that takes you there in the game." />
+  <meta name="theme-color" content="#0e1116" />
+  <meta property="og:title" content="Sights · Instant San Francisco" />
+  <meta property="og:image" content="/img/sights/ggb.jpg" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230e1116'/%3E%3Cpath d='M9 24V11M23 24V11M6 15c4 3 16 3 20 0' stroke='%23e5532d' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/site/site.css" />
+  <script>document.documentElement.classList.add('js')</script>
+</head>
+<body data-page="sights">
+  <header id="site-header"></header>
+
+  <main id="main" tabindex="-1">
+    <section class="page-hero" aria-labelledby="page-title">
+      <div class="wrap">
+        <nav class="subnav" aria-label="Guide">
+          <a href="/sights/" aria-current="page" data-i18n="nav.sights">Sights</a>
+          <a href="/eat/" data-i18n="nav.eat">Eat &amp; drink</a>
+          <a href="/streets/" data-i18n="nav.streets">Streets &amp; squares</a>
+        </nav>
+        <h1 class="h1" id="page-title" data-i18n-html="sights.title">Sights in <em>San Francisco</em></h1>
+        <p class="lede" data-i18n="sights.lede">The landmarks the game knows by name. Read a line about each, then jump straight there on your bike.</p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0" aria-label="All sights">
+      <div class="wrap">
+        <h2 class="sr-only" data-i18n="sights.jump">Jump to a sight</h2>
+        <ul class="jump" id="sight-jump"></ul>
+        <div class="sights" id="sight-list">
+          <noscript><p class="muted">This list needs JavaScript. You can still <a href="/play/">play the game</a>.</p></noscript>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script type="module" src="/src/site/site.js"></script>
+  <script type="module" src="/src/site/sights.js"></script>
+</body>
+</html>

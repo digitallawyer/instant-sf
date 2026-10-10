@@ -2,9 +2,189 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Instant SF</title>
-  <meta http-equiv="refresh" content="0; url=/play/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Instant San Francisco: a free 3D game of San Francisco in your browser</title>
+  <meta name="description" content="Ride a bike, skateboard, walk or flop as a sea lion through a 3D San Francisco built from OpenStreetMap and real USGS elevation. Free, in your browser, nothing to install." />
+  <meta name="theme-color" content="#0e1116" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Instant San Francisco" />
+  <meta property="og:description" content="A free 3D game of San Francisco in your browser. Every building at its real height, every hill at its real grade." />
+  <meta property="og:image" content="/img/golden-gate.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230e1116'/%3E%3Cpath d='M9 24V11M23 24V11M6 15c4 3 16 3 20 0' stroke='%23e5532d' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/site/site.css" />
+  <link rel="preload" as="image" href="/img/golden-gate.jpg" />
+  <script>document.documentElement.classList.add('js')</script>
+  <script type="application/ld+json">
+  { "@context": "https://schema.org", "@type": "VideoGame", "name": "Instant San Francisco",
+    "description": "A free 3D game of San Francisco in your browser, built from OpenStreetMap and USGS elevation data.",
+    "genre": ["Open world", "Exploration"], "gamePlatform": "Web browser", "applicationCategory": "Game", "operatingSystem": "Any",
+    "contentLocation": { "@type": "City", "name": "San Francisco" }, "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" } }
+  </script>
 </head>
-<body><a href="/play/">Play</a></body>
+<body data-page="home">
+  <header id="site-header"></header>
+
+  <main id="main" tabindex="-1">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-slides" aria-hidden="true">
+        <figure data-caption="The Golden Gate from Crissy Field"><img src="/img/golden-gate.jpg" alt="" fetchpriority="high" style="object-position: 38% 50%" /></figure>
+        <figure data-caption="Downtown from Nob Hill"><img src="/img/downtown.jpg" alt="" loading="lazy" /></figure>
+        <figure data-caption="Karl the Fog over the Gate"><img src="/img/karl-golden-gate.jpg" alt="" loading="lazy" /></figure>
+        <figure data-caption="The Embarcadero from the Bay"><img src="/img/embarcadero-skyline.jpg" alt="" loading="lazy" /></figure>
+        <figure data-caption="Nob Hill after dark"><img src="/img/night-nob-hill.jpg" alt="" loading="lazy" /></figure>
+      </div>
+      <div class="hero-inner wrap">
+        <p class="kicker" data-i18n="hero.kicker">A free 3D game in your browser</p>
+        <h1 class="display" id="hero-title" data-i18n-html="hero.title">Instant <em>San Francisco</em></h1>
+        <div class="hero-foot">
+          <div>
+            <p class="lede" data-i18n="hero.sub">Ride the real city. Every building at its measured height, every hill at its real grade, from the Ferry Building to the Golden Gate.</p>
+            <div class="btn-row">
+              <a class="btn btn-primary" href="/play/"><span data-i18n="btn.play">Play now</span> <span class="arrow" aria-hidden="true">→</span></a>
+              <a class="btn btn-ghost" href="/play/?tour"><span data-i18n="btn.tour">Virtual tour</span> <span class="tag soon" data-i18n="btn.soon">Coming soon</span></a>
+            </div>
+            <p class="hero-meta" data-i18n="hero.meta">Free · no account · nothing to install</p>
+          </div>
+          <div class="hero-caption">
+            <span class="cap" aria-live="off"></span>
+            <div class="slide-dots" role="group" aria-label="Choose a screenshot"></div>
+            <button class="slide-pause" type="button"></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section fog" aria-labelledby="intro-title">
+      <div class="wrap">
+        <div class="split">
+          <h2 class="statement reveal" id="intro-title" data-i18n-html="home.intro">A city you can <em>ride through</em>.</h2>
+          <p class="lede reveal d1" data-i18n="home.intro.body">Instant San Francisco rebuilds the northeast of the city from open map data and real elevation, then hands you a bike. Climb Nob Hill, coast down to the Embarcadero, roll out along Crissy Field to the bridge. No downloads, no sign-up.</p>
+        </div>
+        <div class="stats">
+          <div class="stat reveal"><b>40,000+</b><span data-i18n="home.stat.buildings">buildings, at measured height</span></div>
+          <div class="stat reveal d1"><b>1,000+</b><span data-i18n="home.stat.streets">named streets</span></div>
+          <div class="stat reveal d2"><b>11,000</b><span data-i18n="home.stat.trees">street trees</span></div>
+          <div class="stat reveal d3"><b data-sight-count>28</b><span data-i18n="home.stat.sights">sights with a story</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="features-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="kicker">Features</p>
+            <h2 class="h2" id="features-title" data-i18n="home.features">What’s in the box</h2>
+          </div>
+          <a class="btn btn-ghost btn-sm" href="/game/"><span data-i18n="nav.game">The game</span> <span class="arrow" aria-hidden="true">→</span></a>
+        </div>
+        <div class="features">
+          <article class="feature wide reveal">
+            <div class="media"><img src="/img/telegraph-hill.jpg" alt="Aerial view over Telegraph Hill and North Beach towards the Bay, rendered in the game" loading="lazy" /></div>
+            <div class="body">
+              <h3 class="h3" data-i18n="home.f.buildings.t">Real buildings, real height</h3>
+              <p data-i18n="home.f.buildings.d">More than forty thousand buildings from OpenStreetMap, each extruded to its measured height and roof shape.</p>
+            </div>
+          </article>
+          <article class="feature reveal d1">
+            <div class="media"><img src="/img/ride-california.jpg" alt="A cyclist riding down California Street towards the downtown towers" loading="lazy" /></div>
+            <div class="body">
+              <h3 class="h3" data-i18n="home.f.hills.t">Hills you can feel</h3>
+              <p data-i18n="home.f.hills.d">The terrain comes from USGS 3DEP elevation. On the bike, a 17% grade on Hyde Street really does slow you down.</p>
+            </div>
+          </article>
+          <article class="feature reveal">
+            <div class="media"><img src="/img/skate-steiner.jpg" alt="A skateboarder on the tree-lined sidewalk of Steiner Street by the Painted Ladies" loading="lazy" /></div>
+            <div class="body">
+              <h3 class="h3" data-i18n="home.f.ride.t">Bike, board, feet or flippers</h3>
+              <p data-i18n="home.f.ride.d">Ride a bike, push a skateboard, walk, or flop along the Embarcadero as a sea lion from Pier 39.</p>
+            </div>
+          </article>
+          <article class="feature reveal d1">
+            <div class="media"><img src="/img/karl-telegraph.jpg" alt="Thick fog over North Beach with Coit Tower rising out of it" loading="lazy" /></div>
+            <div class="body">
+              <h3 class="h3" data-i18n="home.f.fog.t">Karl the Fog</h3>
+              <p data-i18n="home.f.fog.d">Fog rolls in through the Gate and swallows the towers. Clear afternoon, foggy morning, it’s up to Karl.</p>
+            </div>
+          </article>
+          <article class="feature reveal d2">
+            <div class="media"><img src="/img/night-nob-hill.jpg" alt="Downtown at night seen from Nob Hill, thousands of windows lit" loading="lazy" /></div>
+            <div class="body">
+              <h3 class="h3" data-i18n="home.f.night.t">Day and night</h3>
+              <p data-i18n="home.f.night.d">A full day cycle with the sun where it should be over the Bay, and thousands of lit windows after dark.</p>
+            </div>
+          </article>
+          <article class="feature full soon reveal">
+            <div class="media"><img src="/img/embarcadero-skyline.jpg" alt="The downtown skyline and the piers of the Embarcadero seen from the Bay" loading="lazy" /><span class="tag soon" data-i18n="btn.soon">Coming soon</span></div>
+            <div class="body">
+              <h3 class="h3" data-i18n="home.f.modes.t">Races, missions and a tour</h3>
+              <p data-i18n="home.f.modes.d">Race over the hills, run errands against the clock, or sit back on a guided tour past the sights.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <figure class="band" style="margin:0">
+      <img src="/img/ride-russian-hill.jpg" alt="Riding a bike up a steep Russian Hill street at dusk, the in-game HUD showing the street name and grade" loading="lazy" />
+      <div class="wrap">
+        <p class="kicker">Greenwich Street, Russian Hill</p>
+        <p class="statement reveal">Gravity is <em>real</em> here. So is the view from the top.</p>
+        <figcaption class="cap">In-game: the HUD shows the street, the neighbourhood and how steep it gets.</figcaption>
+      </div>
+    </figure>
+
+    <section class="section" aria-labelledby="explore-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="kicker">Guide</p>
+            <h2 class="h2" id="explore-title" data-i18n="home.explore">Explore before you ride</h2>
+          </div>
+        </div>
+        <div class="explore">
+          <a class="xcard reveal" href="/sights/">
+            <img src="/img/sights/coit.jpg" alt="" loading="lazy" />
+            <span class="count"><span data-sight-count>28</span> sights</span>
+            <h3 class="h3" data-i18n="nav.sights">Sights</h3>
+            <p data-i18n="home.explore.sights">From Coit Tower to Fort Point: what to see, and a button that takes you there.</p>
+            <span class="go">Browse <span aria-hidden="true">→</span></span>
+          </a>
+          <a class="xcard reveal d1" href="/eat/">
+            <img src="/img/street-painted-ladies.jpg" alt="" loading="lazy" />
+            <span class="count">2,000+ places</span>
+            <h3 class="h3" data-i18n="nav.eat">Eat &amp; drink</h3>
+            <p data-i18n="home.explore.eat">Every café, bar and restaurant on the map, filterable by kind and cuisine.</p>
+            <span class="go">Browse <span aria-hidden="true">→</span></span>
+          </a>
+          <a class="xcard reveal d2" href="/streets/">
+            <img src="/img/alamo-aerial.jpg" alt="" loading="lazy" />
+            <span class="count">A–Z</span>
+            <h3 class="h3" data-i18n="nav.streets">Streets &amp; squares</h3>
+            <p data-i18n="home.explore.streets">An A–Z of every street, alley, plaza and park in the game.</p>
+            <span class="go">Browse <span aria-hidden="true">→</span></span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta" aria-labelledby="cta-title">
+      <div class="wrap">
+        <h2 class="statement reveal" id="cta-title" data-i18n-html="home.cta">Your bike is <em>waiting</em>.</h2>
+        <p class="lede reveal d1" data-i18n="home.cta.sub">Runs in any modern browser. Best with a keyboard on a laptop or desktop.</p>
+        <div class="btn-row reveal d2">
+          <a class="btn btn-primary" href="/play/"><span data-i18n="btn.play">Play now</span> <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="/play/?tour"><span data-i18n="btn.tour">Virtual tour</span> <span class="tag soon" data-i18n="btn.soon">Coming soon</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="site-footer"></footer>
+  <script type="module" src="/src/site/site.js"></script>
+</body>
 </html>

@@ -7,7 +7,7 @@ import { addHook, useShared } from '../engine/fog.js';
 import { project } from '../city/region.js';
 
 // ---------- pedestrian model: parts tagged with a limb id for the shader
-function personGeometry() {
+export function personGeometry() {
   const parts = [];
   const add = (g, limb, tone) => {
     g = g.toNonIndexed();
@@ -30,7 +30,7 @@ function personGeometry() {
   return mergeGeometries(parts);
 }
 
-function peopleMaterial(csm) {
+export function peopleMaterial(csm) {
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
   mat.name = 'people';
   if (csm) csm.setupMaterial(mat);
