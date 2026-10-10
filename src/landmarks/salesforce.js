@@ -87,16 +87,16 @@ export function buildSalesforce(ctx) {
           float metal = clamp(max(max(shade, shade2), fin), 0.0, 1.0);
           float metalAvg = 0.5;
           float m = mix(metalAvg, metal, aa);
-          vec3 glassC = vec3(0.42, 0.5, 0.57) * (0.9 + 0.15 * lmHash(vec2(floor(col), fl)));
+          vec3 glassC = vec3(0.5, 0.58, 0.64) * (0.9 + 0.15 * lmHash(vec2(floor(col), fl)));
           vec3 white = vec3(0.9, 0.9, 0.88);
-          diffuseColor.rgb = mix(glassC, white, m);
-          gR = mix(0.06, 0.45, m);
-          gM = mix(0.85, 0.1, m);
+          diffuseColor.rgb = mix(glassC, white, m) * (1.0 - 0.5 * uNight);
+          gR = mix(0.08, 0.45, m);
+          gM = mix(0.5, 0.05, m);
           // offices at night
           vec2 id = vec2(floor(col / 2.0), fl);
           float lit = step(lmHash(id * 0.917 + 4.2), 0.42) * step(f.y, ${(H_ROOF - 2).toFixed(1)}) * step(4.5, f.y);
           vec3 warm = mix(vec3(0.95, 0.85, 0.7), vec3(0.8, 0.88, 1.0), step(0.6, lmHash(id * 1.3)));
-          float farLit = 0.07 * (0.6 + 0.8 * lmNoise(vec2(f.x * 0.05, f.y * 0.12)));
+          float farLit = 0.045 * (0.6 + 0.8 * lmNoise(vec2(f.x * 0.05, f.y * 0.12)));
           gE = warm * (1.0 - m) * uNight * mix(farLit, lit * 1.3, aa);
         `)
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = gR;')

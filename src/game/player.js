@@ -132,16 +132,23 @@ export class Player {
   }
 }
 
-// Keyboard (and later touch/gamepad) state.
-export function createInput(target = window) {
-  const I = { up: false, down: false, left: false, right: false, boost: false, jumpPressed: false, steerAxis: 0, throttleAxis: 0, enabled: true };
-  const map = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ShiftLeft: 'boost', ShiftRight: 'boost' };
+// Keyboard state. layout: 'all' (one player: WASD or arrows), 'p1' (WASD, Space jump, F item) or
+// 'p2' (arrows, Enter jump, right Shift item) for two players on one keyboard.
+const LAYOUTS = {
+  all: { keys: { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' }, jump: ['Space'], item: ['KeyF'] },
+  p1: { keys: { KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right' }, jump: ['Space'], item: ['KeyF'] },
+  p2: { keys: { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }, jump: ['Enter', 'Numpad0'], item: ['ShiftRight', 'Slash'] },
+};
+export function createInput(layout = 'all', target = window) {
+  const I = { up: false, down: false, left: false, right: false, jumpPressed: false, itemPressed: false, steerAxis: 0, throttleAxis: 0, enabled: true, layout };
   target.addEventListener('keydown', e => {
     if (!I.enabled || e.target.tagName === 'INPUT') return;
-    if (map[e.code]) { I[map[e.code]] = true; e.preventDefault(); }
-    if (e.code === 'Space' && !e.repeat) { I.jumpPressed = true; e.preventDefault(); }
+    const L = LAYOUTS[I.layout];
+    if (L.keys[e.code]) { I[L.keys[e.code]] = true; e.preventDefault(); }
+    if (L.jump.includes(e.code) && !e.repeat) { I.jumpPressed = true; e.preventDefault(); }
+    if (L.item.includes(e.code) && !e.repeat) I.itemPressed = true;
   });
-  target.addEventListener('keyup', e => { if (map[e.code]) I[map[e.code]] = false; });
-  target.addEventListener('blur', () => { for (const k of Object.values(map)) I[k] = false; });
+  target.addEventListener('keyup', e => { const k = LAYOUTS.all.keys[e.code]; if (k && (LAYOUTS[I.layout].keys[e.code])) I[k] = false; });
+  target.addEventListener('blur', () => { I.up = I.down = I.left = I.right = false; });
   return I;
 }

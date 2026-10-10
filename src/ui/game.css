@@ -178,3 +178,20 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0d10; col
 .menu-item b { display: block; font: 600 14px var(--sans); color: var(--text); margin-bottom: 2px; }
 .menu-item b em { font-style: normal; font-weight: 500; color: var(--orange); margin-left: 6px; font-size: 12px; }
 .menu-item.on { border-color: var(--orange); background: rgba(229,83,45,.12); }
+
+.menu-players { position: absolute; right: 24px; top: 24px; display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: rgba(255,255,255,.06); }
+.pl { font: 600 11px var(--sans); color: var(--muted); background: transparent; border: 0; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+.pl.on { background: rgba(255,255,255,.14); color: var(--text); }
+.hud-game.two .minimap-wrap, .hud-game.two .nearby { display: none !important; }
+.hud-game.two .place-title { left: 25%; }
+.hud-game.two .gauges { right: auto; left: calc(50% - 170px); }
+.p2hud { position: absolute; right: 20px; bottom: 20px; padding: 10px 16px; font: 500 13px var(--sans); color: var(--muted); }
+.p2hud b { font: 400 40px var(--serif); color: var(--text); margin-right: 4px; }
+.split-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: rgba(10,12,16,.85); display: none; }
+.hud-game.two ~ .split-line { display: block; }
+
+.ghud.two .g-items { left: 25%; bottom: 120px; }
+.ghud.two .g-items2 { left: 75%; }
+.g-pos .pp { font: 600 11px var(--sans); color: var(--orange); letter-spacing: .1em; margin-right: 4px; vertical-align: middle; }
+.g-fog.half { right: 50%; }
+.hud-game.two .gauges { left: 20px; right: auto; }

@@ -2,21 +2,11 @@
 
 export const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-/** Loads the game's map once per page (it is large; the browser caches it for the game too). */
-let mapPromise = null;
-export function loadMap() {
-  mapPromise ??= fetch('/data/sf/map.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
-  return mapPromise;
-}
-
-/** Neighbourhood lookup from the map's "hood" points (plazas and squares in that list are skipped). */
-export function hoodFinder(map, maxDist = 1400) {
-  const hoods = (map.pois || []).filter(p => p.k === 'hood' && !/plaza|square|piazza|court|park|street/i.test(p.n));
-  return (x, z) => {
-    let best = null, bd = maxDist * maxDist;
-    for (const h of hoods) { const d = (h.x - x) ** 2 + (h.z - z) ** 2; if (d < bd) { bd = d; best = h.n; } }
-    return best;
-  };
+/** Loads the compact lookup built by tools/build-index.mjs (streets, squares, places; ~50 KB gzipped). */
+let indexPromise = null;
+export function loadIndex() {
+  indexPromise ??= fetch('/data/sf/index.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  return indexPromise;
 }
 
 /** Accent-insensitive lowercase for searching and sorting. */

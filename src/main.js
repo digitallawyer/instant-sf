@@ -104,9 +104,14 @@ async function boot() {
   await step('Saddling up', 94);
   const world = createWorld(map, hf, landmarks.colliders || []);
   const places = buildPlaces(map);
-  const input = createInput();
+  const input = createInput('all');
   const player = new Player(world, input);
   scene.add(player.object);
+  // a second rider for split-screen two-player
+  const input2 = createInput('p2'); input2.enabled = false;
+  const player2 = new Player(world, input2);
+  player2.avatar.setColor(0x2e5f8a);
+  let twoP = false;
   player.obstacles = (x, z) => {
     const out = [];
     for (const c of traffic.cars) if (Math.abs(c.s.x - x) < 10 && Math.abs(c.s.z - z) < 10) out.push({ x: c.s.x, z: c.s.z, y: c.y, yaw: c.yaw, len: c.len - 0.3, w: 1.8 });
@@ -114,7 +119,9 @@ async function boot() {
     for (const s of parked.nearby(x, z, 6)) out.push({ x: s.x, z: s.z, y: s.y, yaw: s.yaw, len: 4.4, w: 1.8 });
     return out;
   };
+  player2.obstacles = (x, z) => player.obstacles(x, z);
   const chase = new ChaseCam(camera, world);
+  const chase2 = new ChaseCam(R.camera2, world);
   const fly = createFlyCam(camera, renderer.domElement, hf);
   fly.enabled = false;
 
@@ -126,6 +133,8 @@ async function boot() {
 
   const hudRoot = $('#hud');
   const hud = createHud(hudRoot, { map, hf, world, places });
+  hudRoot.insertAdjacentHTML('beforeend', '<div class="p2hud panel" style="display:none"></div><div class="split-line"></div>');
+  const p2hud = hudRoot.querySelector('.p2hud');
   const teleport = (x, z, place) => {
     let tx = x, tz = z, h = player.heading;
     const s = world.nearestStreet(x, z);
@@ -161,12 +170,14 @@ async function boot() {
     if (kind === 'race') {
       const track = buildRaceTrack(def, getRaceStreets());
       if (!track) { hud.toast('Could not plan that route'); return; }
-      game = { kind, def, obj: new Race({ def, track, scene, world, player, hud, audio }) };
+      game = { kind, def, obj: new Race({ def, track, scene, world, players: twoP ? [player, player2] : [player], hud, audio }) };
       setMode('play');
     } else if (kind === 'mission') {
+      if (twoP) setPlayers(1);
       game = { kind, def, obj: new Mission({ def, scene, world, player, streets: getStreets(), hud, audio, csm }) };
       setMode('play');
     } else if (kind === 'tour') {
+      if (twoP) setPlayers(1);
       game = { kind, def, obj: new Tour({ camera, hf, sky, weather, interactive: def === 'interactive' }) };
       ghud.onTour(() => game?.obj.next(), () => { endGame(); setMode('menu'); });
       setMode('tour');
@@ -180,6 +191,7 @@ async function boot() {
       else if (st.mode === 'tour') startGame('tour', st.tour);
       else { endGame(); setMode('play'); }
     },
+    onPlayers: n => setPlayers(n),
     onMount: id => player.avatar.setMount(id),
     onColor: c => player.avatar.setColor(c),
   });
@@ -188,6 +200,20 @@ async function boot() {
   const stats = $('#stats');
   if (params.has('dev')) stats.style.display = '';
 
+  function setPlayers(n) {
+    const on = n === 2;
+    if (on === twoP) return;
+    twoP = on;
+    input.layout = on ? 'p1' : 'all';
+    if (on) {
+      scene.add(player2.object);
+      const h = player.heading;
+      player2.place(player.pos.x + Math.cos(h) * 2.2, player.pos.z - Math.sin(h) * 2.2, h);
+      chase2.snap = true;
+    } else scene.remove(player2.object);
+    menu.syncPlayers(n);
+    setMode(mode);
+  }
   function setMode(m) {
     mode = m;
     if (m === 'menu') { menu.open(); hud.show(false); bigmap.close(); }
@@ -196,6 +222,10 @@ async function boot() {
     if (m === 'tour') { menu.close(); hud.show(false); bigmap.close(); }
     fly.enabled = m === 'fly';
     input.enabled = m === 'play';
+    input2.enabled = twoP && m === 'play';
+    R.setSplit(twoP && m === 'play');
+    hud.el.classList.toggle('two', twoP);
+    p2hud.style.display = twoP && m === 'play' ? '' : 'none';
     if (m !== 'play') for (const k of ['up', 'down', 'left', 'right']) input[k] = false;
   }
   setMode(params.has('play') ? 'play' : 'menu');
@@ -223,7 +253,6 @@ async function boot() {
       else setMode(mode === 'menu' ? 'play' : 'menu');
     }
     else if (e.code === 'KeyM' && mode === 'play') { if (game) hud.toast(game.kind === 'mission' ? 'No map during a mission — follow the arrow' : 'No map during a race'); else bigmap.toggle(player); }
-    else if (e.code === 'KeyF' && mode === 'play' && game?.kind === 'race') input.itemPressed = true;
     else if (e.code === 'KeyC' && mode === 'play') {
       const i = MOUNTS.findIndex(m => m.id === player.mount);
       const next = MOUNTS[(i + 1) % MOUNTS.length];
@@ -275,7 +304,7 @@ async function boot() {
   const clock = new THREE.Timer();
   renderer.info.autoReset = false;
   let frames = 0, acc = 0, lastFov = camera.fov, menuOrbit = 0;
-  window.__sf = { startGame, endGame, get game() { return game; }, fly, people, critters, transit, traffic, parked, weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
+  window.__sf = { RACES, MISSIONS, player2, setPlayers, startGame, endGame, get game() { return game; }, fly, people, critters, transit, traffic, parked, weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
     go: (lat, lon, heading) => { const [x, z] = project(lat, lon); player.place(x, z, heading ?? player.heading); chase.snap = true; } };
 
   function frame() {
@@ -298,8 +327,12 @@ async function boot() {
         hud.hint(near && Math.abs(player.speed) < 7 ? `<kbd>E</kbd> hop on the ${near.name} cable car` : '');
       }
       chase.update(dt, player); hud.update(dt, player);
+      if (twoP) {
+        player2.update(dt); chase2.update(dt, player2);
+        p2hud.innerHTML = `<b>${(Math.abs(player2.speed) * 2.237).toFixed(0)}</b> mph · ${world.streetAt(player2.pos.x, player2.pos.z) || ''}`;
+      }
       if (game?.kind === 'race') {
-        const r = game.obj; r.update(dt, input); ghud.race(r);
+        const r = game.obj; r.update(dt, [input, input2]); ghud.race(r);
         if (r.state === 'finished' && !game.shown) { game.shown = true; setTimeout(() => game?.obj === r && ghud.raceResult(r), 1200); }
       } else if (game?.kind === 'mission') {
         const m = game.obj; m.update(dt); ghud.mission(m);
@@ -331,8 +364,7 @@ async function boot() {
     landmarks.update(dt, camera);
     csm.lightDirection.copy(shared.uSunDir.value).negate();
     for (const l of csm.lights) { l.color.copy(sky.state.sunColor); l.intensity = sky.state.sunIntensity; }
-    csm.update();
-    composer.render(dt);
+    R.render(dt, cam => { sky.follow(cam); csm.update(); });
 
     frames++; acc += dt;
     if (acc > 0.5 && stats.style.display === '') {

@@ -22,11 +22,11 @@ const LOOK = 0.12; // seconds of look-ahead for pulse scheduling
 // Internal calibration of each continuous layer (raw gain at "full" drive). Tuned with the offline
 // level check (tools/audio-check.mjs) - change the user-facing bus levels in ../audio.js instead.
 export const K = {
-  wind: 0.45, howl: 0.5, fogWind: 0.9,
-  tyre: 1.0, whine: 0.5, spray: 0.9, brake: 0.9, grit: 0.55, rumble: 0.6,
-  tick: 2.2, clack: 1.3, thump: 0.3, plank: 1.6, steps: 0.4, slap: 0.7, swim: 0.6, wake: 0.4,
+  wind: 1.0, howl: 2.0, fogWind: 0.45,
+  tyre: 0.4, whine: 0.5, spray: 0.9, brake: 0.9, grit: 0.8, rumble: 0.3,
+  tick: 2.2, clack: 1.3, thump: 0.3, plank: 1.6, steps: 0.4, slap: 0.7, swim: 0.6, wake: 0.25,
   traffic: 0.4, wash: 0.15, surf: 0.5, lap: 1.6, foam: 0.35,
-  rainHiss: 0.1, rainBody: 0.18, drops: 0.35, crickets: 0.07,
+  rainHiss: 0.16, rainBody: 0.1, drops: 0.35, crickets: 0.07,
 };
 
 export function buildEngine(ctx, L, V, opts = {}) {
@@ -185,7 +185,7 @@ export function buildEngine(ctx, L, V, opts = {}) {
     prevSpeed = speedS;
 
     // ---- wind: speed rush + altitude howl + damp fog wind
-    glide(wind.g.gain, K.wind * (0.06 + 0.5 * Math.pow(sN, 1.6) * (0.8 + 0.4 * gust) + 0.45 * hN * (0.4 + 0.8 * gust) + 0.06 * fog), t, 0.25);
+    glide(wind.g.gain, K.wind * (0.04 + 0.5 * Math.pow(sN, 1.6) * (0.8 + 0.4 * gust) + 0.25 * hN * (0.4 + 0.8 * gust) + 0.04 * fog), t, 0.25);
     glide(wind.bp.frequency, 250 + 650 * sN + 450 * hN * gust, t, 0.3);
     glide(howl.g.gain, K.howl * Math.pow(hN, 1.5) * (0.3 + 0.7 * gust), t, 0.4);
     glide(howl.a.frequency, 430 + 380 * gust + 150 * Math.min(sN, 1), t, 0.5);

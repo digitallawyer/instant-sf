@@ -9,7 +9,7 @@ export function createGameHud(root, { onAgain, onMenu, onNext }) {
   root.insertAdjacentHTML('beforeend', `
     <div class="ghud">
       <div class="g-race panel"><div class="g-pos"></div><div class="g-meta"><div class="g-name"></div><div class="g-time"></div><div class="g-lap"></div></div></div>
-      <div class="g-items"></div>
+      <div class="g-items"></div><div class="g-items g-items2"></div>
       <div class="g-count"></div>
       <div class="g-fog"></div>
       <div class="g-warn panel">Wrong way — back to the course</div>
@@ -30,12 +30,14 @@ export function createGameHud(root, { onAgain, onMenu, onNext }) {
     clear() { for (const s of ['.g-race', '.g-items', '.g-count', '.g-fog', '.g-warn', '.g-mission', '.g-result', '.g-tour']) show(s, false); },
     race(race) {
       show('.g-race', true); show('.g-items', true);
-      const me = race.racers[0];
-      $('.g-pos').innerHTML = `${race.position}<small>/${race.racers.length}</small>`;
+      const me = race.racers[0], hs = race.humans, two = hs.length > 1;
+      el.classList.toggle('two', two);
+      $('.g-pos').innerHTML = two ? hs.map((h, i) => `<span class="pp">P${i + 1}</span>${h.position}`).join('<small> · </small>') : `${race.position}<small>/${race.racers.length}</small>`;
+      const bag = (h, sel, keyName) => { const b = $(sel); b.classList.toggle('on', !!h); if (!h) return; b.innerHTML = [0, 1, 2].map(i => `<div class="gi${h.items[i] ? ' full' : ''}">${h.items[i] ? ITEMS[h.items[i]].icon : ''}</div>`).join('') + (h.items.length ? `<span>${keyName} use</span>` : ''); };
       $('.g-name').textContent = race.def.name;
       $('.g-time').textContent = fmt(Math.max(0, race.t));
       $('.g-lap').textContent = race.laps > 1 ? `Lap ${Math.min(race.laps, me.lap + 1)} of ${race.laps}` : `${Math.round(Math.min(100, Math.max(0, race.progressOf(me) / race.total * 100)))}%`;
-      $('.g-items').innerHTML = [0, 1, 2].map(i => `<div class="gi${race.items[i] ? ' full' : ''}">${race.items[i] ? ITEMS[race.items[i]].icon : ''}</div>`).join('') + (race.items.length ? '<span>F use</span>' : '');
+      bag(hs[0], '.g-items', 'F'); bag(two ? hs[1] : null, '.g-items2', 'right ⇧');
       const n = race.state === 'countdown' ? Math.ceil(-race.t) : race.t < 0.9 ? 0 : null;
       if (n !== lastCount) {
         lastCount = n;
@@ -45,6 +47,7 @@ export function createGameHud(root, { onAgain, onMenu, onNext }) {
         show('.g-count', !!c.textContent);
       }
       $('.g-fog').style.opacity = race.fogged > 0 ? Math.min(1, race.fogged) * 0.92 : 0;
+      $('.g-fog').classList.toggle('half', two);
       show('.g-warn', race.offCourse && race.state === 'racing');
     },
     raceResult(race) {

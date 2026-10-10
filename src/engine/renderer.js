@@ -24,33 +24,66 @@ export function createRenderer(canvas, { quality = 'high' } = {}) {
   csm.fade = true;
   for (const l of csm.lights) l.shadow.normalBias = 0.06;
 
-  const composer = new EffectComposer(renderer, { frameBufferType: THREE.HalfFloatType, multisampling: 0 });
-  composer.addPass(new RenderPass(scene, camera));
-  const ao = new N8AOPostPass(scene, camera, window.innerWidth, window.innerHeight);
-  ao.configuration.aoRadius = 4;
-  ao.configuration.distanceFalloff = 1.5;
-  ao.configuration.intensity = 2.2;
-  ao.configuration.gammaCorrection = false;
-  ao.configuration.halfRes = quality !== 'high';
-  ao.setQualityMode(quality === 'high' ? 'Medium' : 'Performance');
-  composer.addPass(ao);
-  const bloom = new BloomEffect({ intensity: 0.4, luminanceThreshold: 1.1, luminanceSmoothing: 0.2, mipmapBlur: true, radius: 0.7 });
-  const tone = new ToneMappingEffect({ mode: ToneMappingMode.AGX });
-  const grade = new HueSaturationEffect({ saturation: 0.22 });
-  const contrast = new BrightnessContrastEffect({ contrast: 0.1 });
-  const vignette = new VignetteEffect({ darkness: 0.38, offset: 0.32 });
-  composer.addPass(new EffectPass(camera, bloom, tone, grade, contrast, vignette));
-  composer.addPass(new EffectPass(camera, new SMAAEffect({ preset: SMAAPreset.HIGH })));
+  function makeComposer(cam) {
+    const composer = new EffectComposer(renderer, { frameBufferType: THREE.HalfFloatType, multisampling: 0 });
+    composer.addPass(new RenderPass(scene, cam));
+    const ao = new N8AOPostPass(scene, cam, window.innerWidth, window.innerHeight);
+    ao.configuration.aoRadius = 4;
+    ao.configuration.distanceFalloff = 1.5;
+    ao.configuration.intensity = 2.2;
+    ao.configuration.gammaCorrection = false;
+    ao.configuration.halfRes = quality !== 'high';
+    ao.setQualityMode(quality === 'high' ? 'Medium' : 'Performance');
+    composer.addPass(ao);
+    const bloom = new BloomEffect({ intensity: 0.4, luminanceThreshold: 1.1, luminanceSmoothing: 0.2, mipmapBlur: true, radius: 0.7 });
+    const tone = new ToneMappingEffect({ mode: ToneMappingMode.AGX });
+    const grade = new HueSaturationEffect({ saturation: 0.22 });
+    const contrast = new BrightnessContrastEffect({ contrast: 0.1 });
+    const vignette = new VignetteEffect({ darkness: 0.38, offset: 0.32 });
+    composer.addPass(new EffectPass(cam, bloom, tone, grade, contrast, vignette));
+    composer.addPass(new EffectPass(cam, new SMAAEffect({ preset: SMAAPreset.HIGH })));
+    composer.ao = ao; composer.bloom = bloom;
+    return composer;
+  }
+  const composer = makeComposer(camera);
+  const ao = composer.ao, bloom = composer.bloom, tone = null;
+
+  // split screen: a second camera and composer, each drawn into half the canvas
+  const camera2 = new THREE.PerspectiveCamera(55, 1, 0.5, 40000);
+  let composer2 = null, split = false;
+  function setSplit(on) {
+    split = on;
+    if (on && !composer2) composer2 = makeComposer(camera2);
+    resize();
+  }
+  function render(dt, beforeView) {
+    if (!split) { beforeView?.(camera, 0); composer.render(dt); return; }
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setScissorTest(true);
+    [[camera, composer, 0], [camera2, composer2, w / 2]].forEach(([cam, comp, x], i) => {
+      renderer.setViewport(x, 0, w / 2, h);
+      renderer.setScissor(x, 0, w / 2, h);
+      csm.camera = cam; csm.updateFrustums();
+      beforeView?.(cam, i);
+      comp.render(dt);
+    });
+    renderer.setScissorTest(false);
+    renderer.setViewport(0, 0, w, h);
+    csm.camera = camera; csm.updateFrustums();
+  }
 
   function resize() {
     const w = window.innerWidth, h = window.innerHeight;
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
+    const vw = split ? w / 2 : w;
+    for (const c of split ? [camera, camera2] : [camera]) { c.aspect = vw / h; c.updateProjectionMatrix(); }
+    // EffectComposer.setSize resizes the canvas too: size the buffers for one view, then restore the canvas
+    composer.setSize(vw, h, false);
+    composer2?.setSize(vw, h, false);
     renderer.setSize(w, h, false);
-    composer.setSize(w, h);
+    renderer.setViewport(0, 0, w, h);
     csm.updateFrustums();
   }
   window.addEventListener('resize', resize);
 
-  return { renderer, scene, camera, csm, composer, ao, bloom, tone, resize, exposure: v => { renderer.toneMappingExposure = v; } };
+  return { renderer, scene, camera, camera2, csm, composer, ao, bloom, resize, render, setSplit, get split() { return split; }, exposure: v => { renderer.toneMappingExposure = v; } };
 }

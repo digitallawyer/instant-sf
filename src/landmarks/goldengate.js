@@ -127,7 +127,7 @@ export function buildGoldenGate(ctx) {
   const orangeLow = makeMat(ctx, { color: ORANGE, roughness: 0.5, metalness: 0.05 }, { worldPos: true, hook: paintHook(0.35), name: 'gg-steel' });
   const cableMat = makeMat(ctx, { color: ORANGE, roughness: 0.6, metalness: 0.05 }, { worldPos: true, name: 'gg-cable', hook: sh => { paintHook(0.3)(sh); minWidthHook(0.46, 0.8)(sh); } });
   const ropeMat = makeMat(ctx, { color: ORANGE, roughness: 0.75, metalness: 0.0 }, { worldPos: true, name: 'gg-rope', hook: sh => { paintHook(0.25)(sh); minWidthHook(0.075, 0.55)(sh); } });
-  const concrete = makeMat(ctx, { color: '#b9b3a7', roughness: 0.92 }, {
+  const concrete = makeMat(ctx, { color: '#c9c3b6', roughness: 0.92 }, {
     worldPos: true, name: 'gg-concrete', hook: shader => {
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\n' + GLSL_HASH)
@@ -223,23 +223,26 @@ export function buildGoldenGate(ctx) {
     }
   }
   // fix the facing of the fender walls (both faces drawn so the winding can't matter)
-  // anchorage housings and the art-deco pylons at both ends of the suspension spans
+  // anchorage housings and the art-deco pylons (S1 / N1) at both ends of the suspension spans
+  const pylonSuppress = [];
+  const osmPylons = map.buildings.filter(b => typeof b.n === 'string' && /^Pylon [SN]1$/.test(b.n)).map(b => ({ b, c: centroid(b.p) }));
   for (const [sA, dir] of [[sAS, -1], [sAN, 1]]) {
     const dk = Math.max(deck(sA, -1), deck(sA, 1));
-    const gx = toWorldTS(0, sA + dir * 25);
-    const gy = Math.max(0, hf.inside(gx[0], gx[1]) ? hf.at(gx[0], gx[1]) : 0) - 3;
-    conc.push(new THREE.Matrix4().makeTranslation(0, 0, -sA));
-    // housing block the cables dive into, under the deck
-    const z0 = 0, z1 = -dir * 44;
-    if (dk - 2 > gy) conc.box(-22, gy, Math.min(z0, z1), 22, dk - 2.2, Math.max(z0, z1));
+    const groundAt = (t, s) => { const w = toWorldTS(t, s); return Math.max(-1, hf.inside(w[0], w[1]) ? hf.at(w[0], w[1]) : 0) - 3; };
+    // the pylons: at the OSM positions when mapped, else just outside the walkways
     for (const side of [-1, 1]) {
-      const cx = side * 18.2;
-      const ring = crossRing([[2.2, 5.0], [3.0, 4.0], [3.6, 2.8]], cx);
-      conc.prism(ring, gy, dk + 12.5, { top: true });
-      conc.prism(crossRing([[1.6, 3.6], [2.4, 2.6]], cx), dk + 12.5, dk + 15.0, { top: true });
-      addCollider([[cx - 3.6, sA - 5], [cx + 3.6, sA - 5], [cx + 3.6, sA + 5], [cx - 3.6, sA + 5]], gy, dk + 15 - gy);
+      const o = osmPylons.find(({ c }) => { const [t, s] = local(c[0], c[1]); return Math.abs(s - sA) < 40 && Math.sign(t) === side; });
+      let [pt, ps] = o ? local(o.c[0], o.c[1]) : [side * 18.2, sA];
+      if (Math.abs(pt) < 16.2) pt = side * 16.2;
+      if (o) pylonSuppress.push({ x: o.c[0], z: o.c[1], r: 5 });
+      const gy = o ? o.b.b - 3 : groundAt(pt, ps);
+      conc.push(new THREE.Matrix4().makeTranslation(0, 0, -ps));
+      conc.prism(crossRing([[2.0, 5.2], [2.8, 4.2], [3.4, 3.0]], pt), gy, dk + 11.0, { top: true });
+      conc.prism(crossRing([[1.7, 4.6], [2.4, 3.6], [2.9, 2.5]], pt), dk + 11.0, dk + 13.2, { top: true });
+      conc.prism(crossRing([[1.3, 3.6], [1.9, 2.6]], pt), dk + 13.2, dk + 15.0, { top: true });
+      conc.pop();
+      addCollider([[pt - 3.4, ps - 5.2], [pt + 3.4, ps - 5.2], [pt + 3.4, ps + 5.2], [pt - 3.4, ps + 5.2]], gy, dk + 15 - gy);
     }
-    conc.pop();
   }
 
   const towerMesh = mesh(tower, orange);
@@ -254,10 +257,10 @@ export function buildGoldenGate(ctx) {
     const t = side * LEG;
     const pts = [];
     // into the south anchorage housing, side span, main span, north side span, into the north housing
-    pts.push([sAS - 34, AY.S - 11]);
+    pts.push([sAS - 4, AY.S - 1.5]);
     for (let s = sAS; s < sAN; s += 4) pts.push([s, cableY(s)]);
     pts.push([0, CABLE_TOP], [L, CABLE_TOP]);
-    pts.push([sAN, cableY(sAN)], [sAN + 34, AY.N - 11]);
+    pts.push([sAN, cableY(sAN)], [sAN + 4, AY.N - 1.5]);
     pts.sort((a, b) => a[0] - b[0]);
     tube(cab, pts.map(([s, y]) => [t, y, -s]), R, SEG);
   }
@@ -405,7 +408,7 @@ export function buildGoldenGate(ctx) {
   group.add(posts, heads);
   const lampDots = glowPoints(lampPos.map(([side, s, y]) => [side * (10.45 - 1.05), y + 7.1, -s]), new THREE.Color(1.0, 0.72, 0.42), 4);
   group.add(lampDots);
-  const pools = lightPools(lampPos.map(([side, s, y]) => [side * 7.5, y + 0.12, -s]), new THREE.Color(1.0, 0.7, 0.4), 10);
+  const pools = lightPools(lampPos.map(([side, s, y]) => [side * 7.0, y + 0.12, -s]), new THREE.Color(1.0, 0.7, 0.4), 13);
   group.add(pools);
 
   // red aviation lights: leg tops, the mid-span cable crowns, and the struts
@@ -421,7 +424,7 @@ export function buildGoldenGate(ctx) {
   group.add(beaconDots);
 
   // ---- OSM tower parts (and their deck slabs) are replaced by ours ----
-  const suppress = [{ x: S[0], z: S[1], r: 26 }, { x: N[0], z: N[1], r: 26 }];
+  const suppress = [{ x: S[0], z: S[1], r: 26 }, { x: N[0], z: N[1], r: 26 }, ...pylonSuppress];
 
   let t = 0;
   const update = dt => {
@@ -432,7 +435,7 @@ export function buildGoldenGate(ctx) {
     const pulse = 0.55 + 0.45 * Math.max(0, Math.sin(t * 2.2));
     red.color.copy(red.userData.base).multiplyScalar(0.6 + night * 10 * pulse);
     lampDots.visible = beaconDots.visible = pools.visible = night > 0.05;
-    pools.material.color.copy(pools.material.userData.base).multiplyScalar(night * 0.5);
+    pools.material.color.copy(pools.material.userData.base).multiplyScalar(night * 0.32);
     lampDots.material.color.copy(lampDots.material.userData.base).multiplyScalar(night * 2.2);
     beaconDots.material.color.copy(beaconDots.material.userData.base).multiplyScalar(night * 3 * pulse);
   };

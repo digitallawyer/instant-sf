@@ -4,13 +4,14 @@ import { RACES, MISSIONS } from '../city/sf.js';
 
 const fmtLimit = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
-export function createMenu(root, { onStart, onMount, onColor }) {
+export function createMenu(root, { onStart, onMount, onColor, onPlayers }) {
   root.insertAdjacentHTML('beforeend', `
     <div class="menu">
       <div class="menu-card panel">
         <div class="menu-kicker">A city you can ride through</div>
         <h1 class="menu-title">Instant <em>San Francisco</em></h1>
         <p class="menu-sub">Every building at its real height, every hill at its real grade. Bike, skate, walk or flop around as a sea lion.</p>
+        <div class="menu-players"><button class="pl on" data-n="1">1 player</button><button class="pl" data-n="2">2 players</button></div>
         <div class="menu-modes">
           <button class="mode on" data-mode="explore">Explore</button>
           <button class="mode" data-mode="race">Race</button>
@@ -62,12 +63,19 @@ export function createMenu(root, { onStart, onMount, onColor }) {
     onColor(COLORS[+b.dataset.i].c);
   }));
   go.addEventListener('click', () => onStart({ ...state }));
+  el.querySelectorAll('.pl').forEach(b => b.addEventListener('click', () => onPlayers?.(+b.dataset.n)));
   return {
     el, state,
     get isOpen() { return el.classList.contains('on'); },
     open() { el.classList.add('on'); },
     close() { el.classList.remove('on'); },
     start() { onStart({ ...state }); },
+    syncPlayers(n) {
+      el.querySelectorAll('.pl').forEach(x => x.classList.toggle('on', +x.dataset.n === n));
+      el.querySelector('.menu-keys').innerHTML = n === 2
+        ? 'Player 1: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>Space</kbd> jump · <kbd>F</kbd> item &nbsp;&nbsp; Player 2: <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> · <kbd>Enter</kbd> jump · <kbd>right ⇧</kbd> item'
+        : '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> ride · <kbd>Space</kbd> jump · <kbd>E</kbd> hop on a cable car · <kbd>M</kbd> map · <kbd>C</kbd> change ride · <kbd>R</kbd> weather · <kbd>Esc</kbd> menu';
+    },
     syncMount(id) { el.querySelectorAll('.mount').forEach(x => x.classList.toggle('on', x.dataset.id === id)); },
   };
 }

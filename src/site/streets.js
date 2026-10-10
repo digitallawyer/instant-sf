@@ -1,7 +1,6 @@
-// Streets & squares A–Z, built at runtime from the game's map.json:
-// streets from `names` (+ `roads[].n` for length and neighbourhood), squares and parks from named areas and POIs.
+// Streets & squares A–Z, from data/sf/index.json (built from the game's map.json by tools/build-index.mjs).
 import { t } from './i18n.js';
-import { esc, loadMap, hoodFinder, fold, debounce } from './util.js';
+import { esc, loadIndex, fold, debounce } from './util.js';
 
 const $ = s => document.querySelector(s);
 const elAz = $('#az'), elLetters = $('#letters'), elCount = $('#count'), elQ = $('#q');
@@ -14,53 +13,12 @@ const letterOf = name => { const c = fold(name).charAt(0).toUpperCase(); return 
 const state = { q: '', kind: '' };
 let entries = [];
 
-function polyLen(p) {
-  let L = 0;
-  for (let i = 2; i < p.length; i += 2) L += Math.hypot(p[i] - p[i - 2], p[i + 1] - p[i - 1]);
-  return L;
-}
-function centroid(p) {
-  let x = 0, z = 0; const n = p.length / 2;
-  for (let i = 0; i < p.length; i += 2) { x += p[i]; z += p[i + 1]; }
-  return [x / n, z / n];
-}
-
-function build(map) {
-  const hoodAt = hoodFinder(map);
-  const names = map.names || [];
-  const len = new Float64Array(names.length);
-  const hoods = names.map(() => ({}));
-  for (const r of map.roads || []) {
-    if (r.n == null || !r.p || r.p.length < 4) continue;
-    const L = polyLen(r.p);
-    len[r.n] += L;
-    const mid = (r.p.length / 4 | 0) * 2;
-    const h = hoodAt(r.p[mid], r.p[mid + 1]);
-    if (h) hoods[r.n][h] = (hoods[r.n][h] || 0) + L;
-  }
-  const seen = new Set();
-  const out = [];
-  names.forEach((n, i) => {
-    const key = fold(n);
-    if (!n || seen.has(key)) return;
-    seen.add(key);
-    const hood = Object.entries(hoods[i]).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
-    out.push({ n, kind: 'street', len: len[i], hood });
-  });
-
-  const addSquare = (n, x, z, type) => {
-    const key = fold(n);
-    if (!n || seen.has(key)) return;
-    seen.add(key);
-    out.push({ n, kind: 'square', type, hood: hoodAt(x, z) || '' });
-  };
-  for (const a of map.areas || []) {
-    if (a.n && (a.k === 'park' || a.k === 'plaza') && a.p?.length >= 6) { const [x, z] = centroid(a.p); addSquare(a.n, x, z, a.k === 'plaza' ? 'square' : 'park'); }
-  }
-  for (const p of map.pois || []) {
-    if (p.k === 'park') addSquare(p.n, p.x, p.z, 'park');
-    if (p.k === 'hood' && /plaza|square|piazza/i.test(p.n)) addSquare(p.n, p.x, p.z, 'square');
-  }
+function build(idx) {
+  const hood = h => idx.hoods[h] || '';
+  const out = [
+    ...idx.streets.map(([n, len, h]) => ({ n, kind: 'street', len, hood: hood(h) })),
+    ...idx.squares.map(([n, type, h]) => ({ n, kind: 'square', type, hood: hood(h) })),
+  ];
   for (const e of out) { e.key = fold(e.n); e.letter = letterOf(e.n); e.hay = fold(`${e.n} ${e.hood}`); }
   return out.sort((a, b) => collator.compare(a.n, b.n));
 }
@@ -96,12 +54,12 @@ function setKind(k) {
 }
 
 async function init() {
-  let map;
-  try { map = await loadMap(); } catch {
+  let idx;
+  try { idx = await loadIndex(); } catch {
     elAz.innerHTML = `<div class="status">${esc(t('ui.error'))}</div>`;
     return;
   }
-  entries = build(map);
+  entries = build(idx);
   const counts = { '': entries.length, street: 0, square: 0 };
   for (const e of entries) counts[e.kind]++;
   document.querySelectorAll('#kinds [data-count]').forEach(s => { s.textContent = fmt(counts[s.dataset.count]); });

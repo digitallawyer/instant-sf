@@ -1,6 +1,6 @@
-// Eat & drink: every food / cafe / bar point in the game's map.json, searchable and filterable.
+// Eat & drink: every food / cafe / bar point in the game's map (via data/sf/index.json), searchable and filterable.
 import { t } from './i18n.js';
-import { esc, loadMap, hoodFinder, fold, debounce } from './util.js';
+import { esc, loadIndex, fold, debounce } from './util.js';
 
 const KINDS = ['food', 'cafe', 'bar'];
 const PAGE = 120;
@@ -58,17 +58,15 @@ function setKind(k) {
 }
 
 async function init() {
-  let map;
-  try { map = await loadMap(); } catch {
+  let idx;
+  try { idx = await loadIndex(); } catch {
     elList.innerHTML = `<div class="status">${esc(t('ui.error'))}</div>`;
     return;
   }
-  const hoodAt = hoodFinder(map);
-  places = (map.pois || [])
-    .filter(p => KINDS.includes(p.k) && p.n && /[\p{L}\p{N}]/u.test(p.n))
-    .map(p => {
-      const c = cuisine(p.cu), hood = hoodAt(p.x, p.z);
-      return { ...p, cuisine: c, hood, key: fold(p.n), hay: fold([p.n, c, hood, p.k === 'food' ? 'restaurant' : p.k].join(' ')) };
+  places = idx.places
+    .map(([n, k, x, z, cu, h]) => {
+      const c = cuisine(cu), hood = idx.hoods[h] || '';
+      return { n, k, x, z, cuisine: c, hood, key: fold(n), hay: fold([n, c, hood, k === 'food' ? 'restaurant' : k].join(' ')) };
     })
     .sort((a, b) => a.key.localeCompare(b.key));
 
