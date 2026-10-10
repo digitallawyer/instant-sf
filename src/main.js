@@ -12,6 +12,7 @@ import { createFurniture } from './engine/furniture.js';
 import { createWeather } from './engine/weather.js';
 import { buildRoadGraph, createTraffic, createParked } from './life/traffic.js';
 import { createTransit } from './life/transit.js';
+import { createPeople, createCritters } from './life/people.js';
 import { createFlyCam } from './engine/flycam.js';
 import { createWorld } from './game/world.js';
 import { Player, createInput } from './game/player.js';
@@ -91,7 +92,9 @@ async function boot() {
   const traffic = createTraffic(map, hf, csm, graph);
   const parked = createParked(map, hf, csm, graph);
   const transit = createTransit(map, hf, csm);
-  scene.add(traffic.group, parked.group, transit.group);
+  const people = createPeople(map, hf, csm, graph);
+  const critters = createCritters(map, hf, csm);
+  scene.add(traffic.group, parked.group, transit.group, people.group, critters.group);
 
   await step('Saddling up', 94);
   const world = createWorld(map, hf, landmarks.colliders || []);
@@ -206,7 +209,7 @@ async function boot() {
   const clock = new THREE.Timer();
   renderer.info.autoReset = false;
   let frames = 0, acc = 0, lastFov = camera.fov, menuOrbit = 0;
-  window.__sf = { transit, traffic, parked, weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
+  window.__sf = { fly, people, critters, transit, traffic, parked, weather, landmarks, scene, camera, sky, hf, map, renderer, csm, R, player, world, places, setMode, teleport, input,
     go: (lat, lon, heading) => { const [x, z] = project(lat, lon); player.place(x, z, heading ?? player.heading); chase.snap = true; } };
 
   function frame() {
@@ -243,6 +246,8 @@ async function boot() {
     weather.update(dt, camera);
     traffic.update(dt, mode === 'play' ? player.pos : camera.position, mode === 'play' ? player : null);
     transit.update(dt);
+    people.update(dt, mode === 'play' ? player.pos : camera.position, mode === 'play' ? player : null);
+    critters.update(dt);
     parked.update(camera.position);
     sky.follow(camera);
     trees.userData.update(camera.position);
