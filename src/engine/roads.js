@@ -25,6 +25,44 @@ function densify(p, ys, maxSeg) {
 
 const key = (x, z) => x.toFixed(1) + ',' + z.toFixed(1);
 
+// Rain: puddles (flat, mirror-like water in the low spots and along the gutters) with animated
+// ripples, darker soaked surfaces elsewhere, and the street lights streaking across wet asphalt.
+export const WET_GLSL = /* glsl */`
+float gPud; vec2 gRip;
+// expanding ring ripples from raindrops on a 0.45 m grid; returns the height gradient
+vec2 rainRipples(vec2 p, float t) {
+  p /= 0.45;
+  vec2 cell = floor(p), g = vec2(0.0);
+  for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) {
+    vec2 c = cell + vec2(float(i), float(j));
+    float h = hash12(c);
+    vec2 ctr = c + 0.5 + (vec2(hash12(c + 1.3), hash12(c + 7.1)) - 0.5) * 0.7;
+    float age = fract(t * 0.9 + h);
+    vec2 d = p - ctr; float r = length(d);
+    float x = r - age * 1.1;
+    float wv = cos(x * 26.0) * exp(-x * x * 90.0) * (1.0 - age) * (1.0 - age);
+    g += d / max(r, 1e-3) * wv;
+  }
+  return g * 0.35;
+}
+// reflections of the street lamps on a wet, rough surface: follow the mirrored view ray up to the
+// lamp heads and sample the lamp map there; several samples spread along the ray's vertical
+// angle stretch the reflection into a streak towards the viewer
+float lampStreak(vec3 wp, float spread) {
+  vec3 v = normalize(wp - cameraPosition);
+  vec3 r = vec3(v.x, -v.y, v.z);
+  if (r.y < 0.02) return 0.0;
+  float acc = 0.0;
+  for (int i = 0; i < 5; i++) {
+    float k = 1.0 + (float(i) - 2.0) * spread;
+    vec2 q = wp.xz + r.xz * (7.3 / max(r.y * k, 0.01));
+    float l = texture2D(uLamps, (q - uWorldRect.xy) / uWorldRect.zw).r;
+    acc += pow(smoothstep(0.5, 0.95, l), 4.0);
+  }
+  return acc / 5.0;
+}
+`;
+
 export function createRoads(map, hf, csm) {
   // junctions: OSM nodes shared by two or more car roads (same node -> same projected coordinate)
   const count = new Map(), radius = new Map();
@@ -126,6 +164,7 @@ export function createRoads(map, hf, csm) {
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvRW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nvarying vec4 vRoad;\nvarying vec2 vRUV;\nvarying vec3 vRW;\nfloat gRR;\n' + GLSL_NOISE)
+      .replace('#include <fog_pars_fragment>', '#include <fog_pars_fragment>\n' + WET_GLSL)
       .replace('#include <color_fragment>', /* glsl */`
         #include <color_fragment>
         float k = vRoad.x, w = vRoad.y, jd = vRoad.z, fl = vRoad.w;
@@ -137,7 +176,9 @@ export function createRoads(map, hf, csm) {
         float big = fbm(vRW.xz * 0.08);
         float fine = vnoise(vRW.xz * 3.0);
         vec3 c;
-        gRR = 0.86;
+        gRR = 0.86; gPud = 0.0; gRip = vec2(0.0);
+        float soak = 0.35;   // how much darker the surface gets when soaked
+        float edge = min(x, w - x);
         if (k <= 6.5) {
           // asphalt: patched, sun-bleached, darker oil line in each lane
           c = mix(vec3(0.13, 0.13, 0.13), vec3(0.21, 0.205, 0.2), big) * (0.9 + 0.2 * fine);
@@ -145,9 +186,12 @@ export function createRoads(map, hf, csm) {
           c = mix(c, c * 0.72, patchy * 0.6);
           float crack = smoothstep(0.015, 0.0, abs(fbm(vRW.xz * 0.6) - 0.5)) * 0.5;
           c *= 1.0 - crack * 0.5;
+          // tyre-polished lanes with an oil drip line down the middle of each
+          float laneC = abs(fract((oneway ? x : cx) / 3.5) - 0.5) * 3.5;
+          c *= 1.0 - 0.12 * (1.0 - smoothstep(0.15, 0.5, laneC)) * smoothstep(0.3, 0.7, vnoise(vec2(a * 0.4, x)));
           // gutter + curb
-          float edge = min(x, w - x);
           c = mix(c, vec3(0.42, 0.41, 0.39), smoothstep(0.45, 0.35, edge));
+          soak = 0.5;
           float paint = 0.0; vec3 pc = vec3(0.92);
           float fade = smoothstep(9.0, 12.0, jd);
           if (cobble) { vec2 q = vec2(x, a) / vec2(0.22, 0.14); q.x += step(1.0, mod(floor(q.y), 2.0)) * 0.5; vec2 e = abs(fract(q) - 0.5); c = mix(vec3(0.32, 0.3, 0.28), vec3(0.16), smoothstep(0.42, 0.5, max(e.x, e.y))); }
@@ -186,10 +230,29 @@ export function createRoads(map, hf, csm) {
           c *= 1.0 - smoothstep(0.47, 0.5, max(e.x, e.y)) * 0.25;
           if (k > 7.5 && k < 8.5 && w < 2.5) c = mix(vec3(0.42, 0.36, 0.27), vec3(0.5, 0.44, 0.33), big);
         }
-        diffuseColor.rgb = c * (1.0 - uWet * 0.35);
+        if (uWet > 0.001 && k < 9.5) {
+          // puddles: low spots in the surface and along the gutters, filling up as the rain goes on
+          float lowSpot = fbm(vRW.xz * 0.09 + 3.7) * 0.75 + vnoise(vRW.xz * 0.55) * 0.25;
+          float gut = (1.0 - smoothstep(0.25, 1.2, edge)) * (k <= 6.5 ? 1.0 : 0.0);
+          float hgt = lowSpot - 0.22 * gut + 0.06 * smoothstep(0.0, w * 0.5, w * 0.5 - cx);
+          float thr = mix(0.12, 0.47, uWet);
+          gPud = smoothstep(thr, thr - 0.035, hgt) * smoothstep(0.15, 0.6, uWet);
+          if (gPud > 0.01) gRip = rainRipples(vRW.xz, uTime) * gPud;
+          // soaked: darker, with damp patches drying first on the crown
+          float damp = uWet * (0.75 + 0.25 * smoothstep(0.3, 0.7, vnoise(vRW.xz * 0.35)));
+          c *= 1.0 - soak * damp;
+          c = mix(c, c * 0.55 + vec3(0.004, 0.006, 0.008), gPud);
+          gRR = mix(gRR, 0.2 + 0.18 * vnoise(vRW.xz * 0.7), damp);
+          gRR = mix(gRR, 0.02, gPud);
+        }
+        diffuseColor.rgb = c;
       `)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(gRR, 0.12 + 0.2 * vnoise(vRW.xz * 0.4), uWet);')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += vec3(1.0, 0.72, 0.42) * texture2D(uLamps, (vRW.xz - uWorldRect.xy) / uWorldRect.zw).r * uNight * 0.55;');
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = gRR;')
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        if (gPud > 0.001) normal = normalize(mix(normal, normalize((viewMatrix * vec4(normalize(vec3(-gRip.x, 1.0, -gRip.y)), 0.0)).xyz), gPud));`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        totalEmissiveRadiance += vec3(1.0, 0.72, 0.42) * texture2D(uLamps, (vRW.xz - uWorldRect.xy) / uWorldRect.zw).r * uNight * 0.55;
+        if (uWet * uNight > 0.01) totalEmissiveRadiance += vec3(1.0, 0.78, 0.5) * lampStreak(vRW, mix(0.07, 0.025, gPud)) * uWet * uNight * mix(0.7, 1.6, gPud);`);
   });
 
   const group = new THREE.Group();
@@ -280,7 +343,8 @@ function createSidewalks(map, hf, csm, count, radius) {
       .replace('#include <uv_vertex>', '#include <uv_vertex>\nvSUV = uv; vUp = normal.y;')
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvSW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vSUV;\nvarying vec3 vSW;\nvarying float vUp;\n' + GLSL_NOISE)
+      .replace('#include <common>', '#include <common>\nvarying vec2 vSUV;\nvarying vec3 vSW;\nvarying float vUp;\nfloat gSR;\n' + GLSL_NOISE)
+      .replace('#include <fog_pars_fragment>', '#include <fog_pars_fragment>\n' + WET_GLSL)
       .replace('#include <color_fragment>', `#include <color_fragment>
         float x = vSUV.x, a = vSUV.y;
         float big = fbm(vSW.xz * 0.1), fine = vnoise(vSW.xz * 4.0);
@@ -294,10 +358,26 @@ function createSidewalks(map, hf, csm, count, radius) {
         c = mix(c, vec3(0.66, 0.65, 0.62) * (0.9 + 0.1 * fine), curb);
         // gum spots and stains
         c *= 1.0 - smoothstep(0.75, 0.8, vnoise(vSW.xz * 1.7)) * 0.15;
-        diffuseColor.rgb = c * (1.0 - uWet * 0.3);
+        gSR = 0.9; gPud = 0.0; gRip = vec2(0.0);
+        if (uWet > 0.001) {
+          // wet concrete darkens less than asphalt; shallow puddles collect in sunken slabs
+          float slab = hash12(floor(vec2(x / 1.5, a / 1.5)) + 3.0);
+          float hgt = vnoise(vSW.xz * 0.7) * 0.6 + slab * 0.4 + 0.25 * step(0.5, vUp) * (1.0 - smoothstep(0.0, 0.5, x));
+          float thr = mix(0.05, 0.3, uWet);
+          gPud = smoothstep(thr, thr - 0.04, hgt) * step(0.5, vUp) * smoothstep(0.2, 0.7, uWet);
+          if (gPud > 0.01) gRip = rainRipples(vSW.xz, uTime) * gPud;
+          c *= 1.0 - 0.32 * uWet;
+          c = mix(c, c * 0.6, gPud);
+          gSR = mix(mix(0.9, 0.3 + 0.15 * vnoise(vSW.xz * 0.9), uWet), 0.03, gPud);
+        }
+        diffuseColor.rgb = c;
       `)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.9, 0.25, uWet);')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(1.0, 0.72, 0.42) * texture2D(uLamps, (vSW.xz - uWorldRect.xy) / uWorldRect.zw).r * uNight * 0.55;');
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = gSR;')
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        if (gPud > 0.001) normal = normalize(mix(normal, normalize((viewMatrix * vec4(normalize(vec3(-gRip.x, 1.0, -gRip.y)), 0.0)).xyz), gPud));`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        totalEmissiveRadiance += vec3(1.0, 0.72, 0.42) * texture2D(uLamps, (vSW.xz - uWorldRect.xy) / uWorldRect.zw).r * uNight * 0.55;
+        if (uWet * uNight > 0.01) totalEmissiveRadiance += vec3(1.0, 0.78, 0.5) * lampStreak(vSW, mix(0.07, 0.025, gPud)) * uWet * uNight * mix(0.4, 1.2, gPud);`);
   });
   const mesh = new THREE.Mesh(g, mat);
   mesh.receiveShadow = true;

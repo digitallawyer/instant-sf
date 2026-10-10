@@ -9,6 +9,7 @@ import { createRoads } from './engine/roads.js';
 import { createWater } from './engine/water.js';
 import { createTrees } from './engine/trees.js';
 import { createFurniture } from './engine/furniture.js';
+import { createRooftops } from './engine/rooftops.js';
 import { createWeather } from './engine/weather.js';
 import { buildRoadGraph, createTraffic, createParked } from './life/traffic.js';
 import { createTransit } from './life/transit.js';
@@ -92,6 +93,8 @@ async function boot() {
 
   await step('Lighting the streets', 78);
   scene.add(createFurniture(map, hf, csm, masks.rect));
+  const rooftops = createRooftops(map, csm);
+  scene.add(rooftops);
 
   await step('Planting trees', 84);
   const trees = createTrees(map, hf, csm);
@@ -326,6 +329,7 @@ async function boot() {
     });
   }
 
+  const _dofTarget = new THREE.Vector3();
   const clock = new THREE.Timer();
   renderer.info.autoReset = false;
   let frames = 0, acc = 0, lastFov = camera.fov, menuOrbit = 0;
@@ -407,9 +411,14 @@ async function boot() {
     parked.update(camera.position);
     sky.follow(camera);
     trees.userData.update(camera.position);
+    rooftops.userData.update(camera.position);
     landmarks.update(dt, camera);
     csm.lightDirection.copy(shared.uSunDir.value).negate();
     for (const l of csm.lights) { l.color.copy(sky.state.sunColor); l.intensity = sky.state.sunIntensity; }
+    // cinematic depth of field in the menu (on the rider) and the tour (on the sight)
+    if (mode === 'menu') R.setDof?.({ enabled: true, target: _dofTarget.copy(player.pos).setY(player.pos.y + 1.2), focusRange: 3 });
+    else if (mode === 'tour' && game?.kind === 'tour') R.setDof?.({ enabled: true, target: game.obj.look ?? null, focusDistance: 60, focusRange: 25 });
+    else R.setDof?.({ enabled: false });
     R.render(dt, cam => { sky.follow(cam); csm.update(); });
 
     frames++; acc += dt;
