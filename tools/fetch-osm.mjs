@@ -6,7 +6,8 @@ import path from 'node:path';
 import { BBOX } from '../src/city/region.js';
 
 const OUT = 'data/cache/osm';
-const ENDPOINT = 'https://overpass-api.de/api/interpreter';
+const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.private.coffee/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+const ENDPOINT = ENDPOINTS[0];
 const STEP_LON = 0.017, STEP_LAT = 0.0135;
 
 fs.mkdirSync(OUT, { recursive: true });
@@ -44,13 +45,14 @@ const query = (s, w, n, e) => `[out:json][timeout:180][bbox:${s},${w},${n},${e}]
 );
 out body geom;`;
 
-async function fetchTile(s, w, n, e, file) {
-  for (let attempt = 0; attempt < 5; attempt++) {
+async function fetchTile(s, w, n, e, file) { return fetchQuery(query(s, w, n, e), file); }
+async function fetchQuery(q, file) {
+  for (let attempt = 0; attempt < 15; attempt++) {
     try {
-      const res = await fetch(ENDPOINT, {
+      const res = await fetch(ENDPOINTS[attempt % ENDPOINTS.length], {
         method: 'POST',
         headers: { 'User-Agent': 'instant-sf-dev/0.1 (hobby 3D city game)', 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'data=' + encodeURIComponent(query(s, w, n, e)),
+        body: 'data=' + encodeURIComponent(q),
       });
       if (res.status === 429 || res.status === 504) throw new Error('busy ' + res.status);
       if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + (await res.text()).slice(0, 200));
@@ -59,7 +61,7 @@ async function fetchTile(s, w, n, e, file) {
       fs.writeFileSync(file, text);
       return;
     } catch (err) {
-      const wait = 5000 * (attempt + 1);
+      const wait = Math.min(60000, 4000 * (attempt + 1));
       console.warn(`  ${path.basename(file)}: ${err.message}, retrying in ${wait / 1000}s`);
       await new Promise(r => setTimeout(r, wait));
     }
@@ -67,10 +69,13 @@ async function fetchTile(s, w, n, e, file) {
   throw new Error('gave up on ' + file);
 }
 
+// The tile grid is anchored at a fixed latitude so growing the region only downloads the new rows.
+const ANCHOR_LAT = 37.768;
 const tiles = [];
-for (let s = BBOX.south; s < BBOX.north - 1e-9; s += STEP_LAT)
+const s0 = ANCHOR_LAT - Math.ceil((ANCHOR_LAT - BBOX.south) / STEP_LAT - 1e-9) * STEP_LAT;
+for (let s = s0; s < BBOX.north - 1e-9; s += STEP_LAT)
   for (let w = BBOX.west; w < BBOX.east - 1e-9; w += STEP_LON)
-    tiles.push([s, w, Math.min(s + STEP_LAT, BBOX.north), Math.min(w + STEP_LON, BBOX.east)]);
+    tiles.push([+Math.max(s, BBOX.south).toFixed(4), w, Math.min(s + STEP_LAT, BBOX.north), Math.min(w + STEP_LON, BBOX.east)]);
 
 console.log(`${tiles.length} tiles`);
 let i = 0;
@@ -90,7 +95,6 @@ if (!fs.existsSync(routesFile)) {
   const q = `[out:json][timeout:180][bbox:${BBOX.south},${BBOX.west},${BBOX.north},${BBOX.east}];
 relation["route"~"^(cable_car|tram|light_rail|ferry)$"];
 out body geom;`;
-  const res = await fetch(ENDPOINT, { method: 'POST', headers: { 'User-Agent': 'instant-sf-dev/0.1 (hobby 3D city game)', 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'data=' + encodeURIComponent(q) });
-  fs.writeFileSync(routesFile, await res.text());
+  await fetchQuery(q, routesFile);
   console.log('routes', (fs.statSync(routesFile).size / 1e6).toFixed(1), 'MB');
 }

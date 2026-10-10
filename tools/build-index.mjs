@@ -7,12 +7,13 @@
 //   places:  [[name, kind, x, z, cuisine, neighbourhood], ...] food / cafe / bar points (x, z in map.json metres)
 //   hoods:   [neighbourhood, ...]                              referenced by index from the rows above
 import fs from 'node:fs';
+import { decodeMap } from '../src/city/mapdata.js';
 import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
 const src = path.join(root, 'public/data/sf/map.json');
 const out = path.join(root, 'public/data/sf/index.json');
-const map = JSON.parse(fs.readFileSync(src, 'utf8'));
+const map = decodeMap(JSON.parse(fs.readFileSync(src, 'utf8')));
 
 // neighbourhoods: the map's "hood" points, minus the plazas and squares that share that list
 const hoods = (map.pois || []).filter(p => p.k === 'hood' && !/plaza|square|piazza|court|park|street/i.test(p.n));

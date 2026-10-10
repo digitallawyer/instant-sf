@@ -31,10 +31,21 @@ export const SIGHTS = [
   { id: 'fortmason', name: 'Fort Mason', lat: 37.80630, lon: -122.43150, blurb: 'Old army piers turned arts centre, with a great lawn over the Marina.' },
   { id: 'japantown', name: 'Peace Pagoda', lat: 37.78510, lon: -122.42950, blurb: 'The five-tiered pagoda in Japantown, a gift from Osaka.' },
   { id: 'filbertsteps', name: 'Filbert Steps', lat: 37.80180, lon: -122.40330, blurb: 'Wooden stairs through hidden gardens down the east face of Telegraph Hill.' },
+  { id: 'dolores', name: 'Dolores Park', lat: 37.75960, lon: -122.42690, blurb: 'The Mission\u2019s sunny lawn: picnics, tennis, a playground and the best skyline view in town from the top corner.' },
+  { id: 'missiondolores', name: 'Mission Dolores', lat: 37.76420, lon: -122.42710, blurb: 'The adobe Mission San Francisco de As\u00eds of 1776, the oldest building in the city, beside its basilica.' },
+  { id: 'clarion', name: 'Clarion Alley', lat: 37.76300, lon: -122.42160, blurb: 'A block-long alley between Mission and Valencia covered wall to wall in murals that change every year.' },
+  { id: 'balmy', name: 'Balmy Alley', lat: 37.75160, lon: -122.41230, blurb: 'The Mission\u2019s oldest mural alley, painted since the 1970s with Central American and community stories.' },
+  { id: 'valencia', name: 'Valencia Street', lat: 37.76100, lon: -122.42150, blurb: 'Bike lanes, bookshops, bars and taquerias: the Mission\u2019s main drag for cyclists.' },
+  { id: 'womensbuilding', name: 'The Women\u2019s Building', lat: 37.76140, lon: -122.42290, blurb: 'A community centre wrapped in the vast MaestraPeace mural, on 18th Street.' },
+  { id: 'castro', name: 'Castro Theatre', lat: 37.76210, lon: -122.43500, blurb: 'The 1922 movie palace with its towering neon sign, heart of the Castro.' },
+  { id: 'twinpeaks', name: 'Twin Peaks', lat: 37.75440, lon: -122.44770, blurb: 'Two bare summits near the middle of the city with a view over everything, from the Bay Bridge to the Golden Gate.' },
+  { id: 'sutro', name: 'Sutro Tower', lat: 37.75520, lon: -122.45280, blurb: 'The three-legged red-and-white TV mast that pokes out of the fog above the city.' },
+  { id: 'haightashbury', name: 'Haight & Ashbury', lat: 37.76990, lon: -122.44690, blurb: 'The corner that named the Summer of Love, lined with Victorians and vintage shops.' },
   { id: 'embarcadero', name: 'Embarcadero Center', lat: 37.79470, lon: -122.39870, blurb: 'Four slab towers outlined in lights, linked by sky bridges.' },
 ];
 
-export const START = { lat: 37.79540, lon: -122.39470, heading: Math.PI / 2 + 0.25 }; // on the Embarcadero, facing the Ferry Building
+// The top corner of Dolores Park (20th & Church), looking out over the Mission to downtown.
+export const START = { lat: 37.75840, lon: -122.42770, heading: 2.35 };
 
 // Races follow the shortest bike route between their waypoints. laps > 1 makes a circuit.
 export const RACES = [
@@ -52,6 +63,16 @@ export const RACES = [
     id: 'goldengate', name: 'Golden Gate Dash', laps: 1,
     blurb: 'Along Crissy Field, past Fort Point, up to the toll plaza and out across the bridge to mid-span.',
     way: [[37.80420, -122.45700], [37.80580, -122.46800], [37.80650, -122.47500], [37.81070, -122.47770], [37.81990, -122.47830]],
+  },
+  {
+    id: 'mission', name: 'Mission Mile', laps: 1,
+    blurb: 'From the top of Dolores Park down to Valencia Street, along the bike lanes past Clarion Alley and up 24th Street to Balmy Alley.',
+    way: [[37.75860, -122.42740], [37.76180, -122.42500], [37.76260, -122.42150], [37.75640, -122.42080], [37.75260, -122.41750], [37.75230, -122.41220]],
+  },
+  {
+    id: 'wiggle', name: 'The Wiggle', laps: 1,
+    blurb: 'The cyclists\u2019 zig-zag that dodges the hills between Market Street and the Panhandle, then on to Haight & Ashbury.',
+    way: [[37.76980, -122.42690], [37.77080, -122.43160], [37.77190, -122.43460], [37.77260, -122.43620], [37.77360, -122.43900], [37.76990, -122.44690]],
   },
   {
     id: 'lombard', name: 'Lombard Loop', laps: 2,
@@ -96,6 +117,13 @@ export const MISSIONS = [
     crowd: [[37.77745, -122.41930], [37.77630, -122.43440]],
   },
   {
+    id: 'burrito', type: 'deliver', name: 'Burrito Express', limit: 210, icon: '🌯',
+    blurb: 'Your friends are on the grass at Dolores Park and they are hungry. Pick up the order at a taqueria on Mission Street and get it there while it is still hot.',
+    win: 'Still warm, foil and all. The whole slope cheered.', lose: 'Cold burritos. Your friends have ordered pizza instead.',
+    start: [37.75600, -122.42500], heading: 1.8,
+    stops: [[[37.75090, -122.41810], 'the taqueria on Mission & 25th'], [[37.75960, -122.42690], 'your friends at Dolores Park']],
+  },
+  {
     id: 'postcards', type: 'collect', name: 'Lost Postcards', limit: 180, icon: '💌',
     blurb: 'A gust off the Pacific scattered a tourist’s postcards all over Alamo Square and the streets around it. Find all eight.',
     win: 'All eight found. Wish you were here!', lose: 'Some postcards are still out there, blowing towards the Haight.',
@@ -118,5 +146,7 @@ export const TOUR = [
   { sight: 'cablecarturn', dist: 60, height: 18, bearing: 200, hour: 16 },
   { sight: 'cityhall', dist: 300, height: 90, bearing: 80, hour: 17 },
   { sight: 'painted', dist: 150, height: 32, bearing: 300, hour: 17.9 },
+  { sight: 'dolores', dist: 220, height: 60, bearing: 220, hour: 18.6 },
+  { sight: 'twinpeaks', dist: 500, height: 160, bearing: 120, hour: 19.1 },
   { sight: 'salesforce', dist: 900, height: 260, bearing: 260, hour: 19.6 },
 ];

@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { project } from '../src/city/region.js';
+import { encodeMap } from '../src/city/mapdata.js';
 
 const SRC = 'data/cache/osm';
 const OUT = 'public/data/sf';
@@ -385,6 +386,6 @@ const map = {
   buildings, roads, areas, rails, names, routes,
   trees, signals, crossings, lamps, stops, pois,
 };
-const json = JSON.stringify(map);
+const json = JSON.stringify(encodeMap(map));
 fs.writeFileSync(path.join(OUT, 'map.json'), json);
 console.log(`map.json ${(json.length / 1e6).toFixed(1)} MB`);

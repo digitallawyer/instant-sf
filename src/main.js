@@ -30,6 +30,7 @@ import { Race, buildRaceTrack } from './game/race.js';
 import { Mission } from './game/missions.js';
 import { Tour } from './game/tour.js';
 import { project, unproject } from './city/region.js';
+import { loadMap } from './city/mapdata.js';
 import { START, RACES, MISSIONS, SIGHTS } from './city/sf.js';
 import { createLandmarks } from './landmarks/index.js';
 
@@ -63,7 +64,7 @@ async function boot() {
   const [hf, bf, map] = await Promise.all([
     loadHeightField(DATA, 'terrain'),
     loadHeightField(DATA, 'backdrop'),
-    fetch(`${DATA}/map.json`).then(r => r.json()),
+    loadMap(`${DATA}/map.json`),
   ]);
 
   await step('Shaping the hills', 30);

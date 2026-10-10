@@ -2,7 +2,7 @@
 // World axes: x = east, z = south (so north is -z, as three.js cameras look down -z), y = up.
 // Origin sits near Union Square-ish so coordinates stay small where most of the action is.
 
-export const BBOX = { south: 37.768, west: -122.485, north: 37.835, east: -122.383 };
+export const BBOX = { south: 37.740, west: -122.485, north: 37.835, east: -122.383 };
 export const ORIGIN = { lat: 37.7955, lon: -122.418 };
 
 const R = 6378137;
