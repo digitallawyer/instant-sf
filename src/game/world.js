@@ -29,11 +29,11 @@ function inside(x, z, p) {
   return c;
 }
 
-export function createWorld(map, hf) {
+export function createWorld(map, hf, extraColliders = []) {
   // building walls that reach the ground
   const walls = new Grid(16);
   const blds = new Grid(40);
-  map.buildings.forEach((b, bi) => {
+  map.buildings.concat(extraColliders).forEach((b, bi) => {
     if ((b.m || 0) > 2.5 || b.h < 1.5) return;
     const p = b.p, n = p.length / 2;
     let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;

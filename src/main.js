@@ -79,7 +79,7 @@ async function boot() {
   scene.add(trees);
 
   await step('Saddling up', 92);
-  const world = createWorld(map, hf);
+  const world = createWorld(map, hf, landmarks.colliders || []);
   const places = buildPlaces(map);
   const input = createInput();
   const player = new Player(world, input);
