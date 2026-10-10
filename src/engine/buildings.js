@@ -417,7 +417,11 @@ export function createBuildings(map, csm) {
           gMetal = glass * (tower ? 0.6 : 0.0);
           gEmit = interior * glass * (tower ? 0.55 : 1.0);
           gGlass = glass;
-          if (H > 120.0) gEmit += vec3(1.0, 0.05, 0.02) * step(H - 1.2, f.y) * step(0.5, fract(uTime * 0.5)) * 6.0 * uNight;
+          // aviation beacons: small blinking points along the roofline of the tallest towers
+          if (H > 150.0) gEmit += vec3(1.0, 0.05, 0.02) * step(H - 0.9, f.y) * step(f.y, H - 0.3) * step(fract(f.x / 14.0), 0.025) * step(0.5, fract(uTime * 0.5 + seed)) * 14.0 * uNight;
+          // night: street-light spill on the lower floors and a faint city glow everywhere
+          float spill = texture2D(uLamps, (vWorldPos.xz - uWorldRect.xy) / uWorldRect.zw).r;
+          gEmit += base * (1.0 - glass) * uNight * (vec3(1.0, 0.75, 0.5) * spill * 0.9 * (1.0 - smoothstep(1.0, 10.0, f.y)) + vec3(0.55, 0.5, 0.48) * 0.03);
         } else if (vInfo.w > 1.5) {
           // inner face of a parapet
           base *= 0.75 + 0.1 * vnoise(vWorldPos.xz * 2.0);

@@ -188,7 +188,8 @@ export function createRoads(map, hf, csm) {
         }
         diffuseColor.rgb = c * (1.0 - uWet * 0.35);
       `)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(gRR, 0.12 + 0.2 * vnoise(vRW.xz * 0.4), uWet);');
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(gRR, 0.12 + 0.2 * vnoise(vRW.xz * 0.4), uWet);')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += vec3(1.0, 0.72, 0.42) * texture2D(uLamps, (vRW.xz - uWorldRect.xy) / uWorldRect.zw).r * uNight * 0.55;');
   });
 
   const group = new THREE.Group();
@@ -295,7 +296,8 @@ function createSidewalks(map, hf, csm, count, radius) {
         c *= 1.0 - smoothstep(0.75, 0.8, vnoise(vSW.xz * 1.7)) * 0.15;
         diffuseColor.rgb = c * (1.0 - uWet * 0.3);
       `)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.9, 0.25, uWet);');
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.9, 0.25, uWet);')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(1.0, 0.72, 0.42) * texture2D(uLamps, (vSW.xz - uWorldRect.xy) / uWorldRect.zw).r * uNight * 0.55;');
   });
   const mesh = new THREE.Mesh(g, mat);
   mesh.receiveShadow = true;

@@ -8,6 +8,7 @@ import { createBuildings } from './engine/buildings.js';
 import { createRoads } from './engine/roads.js';
 import { createWater } from './engine/water.js';
 import { createTrees } from './engine/trees.js';
+import { createFurniture } from './engine/furniture.js';
 import { createFlyCam } from './engine/flycam.js';
 import { createWorld } from './game/world.js';
 import { Player, createInput } from './game/player.js';
@@ -55,6 +56,7 @@ async function boot() {
 
   await step('Shaping the hills', 30);
   const masks = paintLanduse(map, hf);
+  shared.uWorldRect.value.copy(masks.rect);
   scene.add(createTerrain(hf, masks, csm));
   scene.add(createBackdrop(bf, hf));
   scene.add(createWater(map, hf, csm));
@@ -74,7 +76,10 @@ async function boot() {
   await step('Paving the streets', 68);
   scene.add(createRoads(map, hf, csm));
 
-  await step('Planting trees', 82);
+  await step('Lighting the streets', 78);
+  scene.add(createFurniture(map, hf, csm, masks.rect));
+
+  await step('Planting trees', 84);
   const trees = createTrees(map, hf, csm);
   scene.add(trees);
 

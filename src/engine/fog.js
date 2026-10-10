@@ -46,10 +46,12 @@ export const shared = {
   uNight: { value: 0 },      // 0 day .. 1 full night: window lights, lamps
   uWet: { value: 0 },        // rain sheen on the streets
   uSunDir: { value: new THREE.Vector3(0.5, 0.6, 0.3).normalize() },
+  uLamps: { value: null },   // street-light pools painted over the play area (see furniture.js)
+  uWorldRect: { value: new THREE.Vector4(0, 0, 1, 1) },
 };
 
 // Adds our shared uniforms to a shader inside onBeforeCompile.
-const SHARED_DECL = '\nuniform float uTime;\nuniform float uNight;\nuniform float uWet;\nuniform vec3 uSunDir;\n';
+const SHARED_DECL = '\nuniform float uTime;\nuniform float uNight;\nuniform float uWet;\nuniform vec3 uSunDir;\nuniform sampler2D uLamps;\nuniform vec4 uWorldRect;\n';
 export function useShared(shader) {
   Object.assign(shader.uniforms, shared);
   shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>' + SHARED_DECL);

@@ -155,7 +155,8 @@ export function createTerrain(hf, masks, csm) {
         c = mix(c, mix(vec3(0.42, 0.4, 0.33), vec3(0.06, 0.09, 0.09), smoothstep(-1.0, -12.0, vWorld.y)), under);
         diffuseColor.rgb = c;
       `)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.97, 0.82, smoothstep(0.25, 0.75, pv)) - uWet * 0.5 * smoothstep(0.25, 0.75, pv);');
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.97, 0.82, smoothstep(0.25, 0.75, pv)) - uWet * 0.5 * smoothstep(0.25, 0.75, pv);')
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += vec3(1.0, 0.72, 0.42) * texture2D(uLamps, (vWorld.xz - uWorldRect.xy) / uWorldRect.zw).r * uNight * 0.55;');
   });
 
   // chunks of 128 cells for culling
