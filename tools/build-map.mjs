@@ -186,6 +186,36 @@ for (const e of elements.values()) {
     });
   }
 }
+// Footpaths and cycleways on a bridge follow the deck of the road they run beside.
+{
+  const carSegs = [];
+  for (const r of roads) if (r.br && r.y && r.k <= 6) for (let i = 0; i < r.p.length / 2 - 1; i++)
+    carSegs.push([r.p[i * 2], r.p[i * 2 + 1], r.p[i * 2 + 2], r.p[i * 2 + 3], r.y[i], r.y[i + 1]]);
+  const G = 50, grid = new Map();
+  for (const s of carSegs) {
+    for (let gx = Math.floor((Math.min(s[0], s[2]) - 20) / G); gx <= Math.floor((Math.max(s[0], s[2]) + 20) / G); gx++)
+      for (let gz = Math.floor((Math.min(s[1], s[3]) - 20) / G); gz <= Math.floor((Math.max(s[1], s[3]) + 20) / G); gz++) {
+        const k = gx + ',' + gz; (grid.get(k) || grid.set(k, []).get(k)).push(s);
+      }
+  }
+  let snapped = 0;
+  for (const r of roads) {
+    if (!r.br || !r.y || r.k <= 6) continue;
+    r.y = r.y.map((y, i) => {
+      const x = r.p[i * 2], z = r.p[i * 2 + 1];
+      let best = null, bd = 18;
+      for (const s of grid.get(Math.floor(x / G) + ',' + Math.floor(z / G)) || []) {
+        const dx = s[2] - s[0], dz = s[3] - s[1], L = dx * dx + dz * dz || 1;
+        const t = Math.max(0, Math.min(1, ((x - s[0]) * dx + (z - s[1]) * dz) / L));
+        const d = Math.hypot(x - s[0] - dx * t, z - s[1] - dz * t);
+        if (d < bd) { bd = d; best = s[4] + (s[5] - s[4]) * t; }
+      }
+      if (best != null) { snapped++; return +best.toFixed(1); }
+      return y;
+    });
+  }
+  console.log(snapped, 'bridge footpath points snapped to their decks');
+}
 for (const r of roads) delete r.nodes;
 console.log(roads.length, 'roads', roads.filter(r => r.br).length, 'bridges');
 

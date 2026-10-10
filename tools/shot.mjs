@@ -7,7 +7,7 @@ import path from 'node:path';
 
 const out = process.argv[2] || 'shots';
 const steps = process.argv.slice(3);
-const url = process.env.URL || 'http://127.0.0.1:5273/play/';
+const url = process.env.URL || 'http://127.0.0.1:5273/play/?dev';
 fs.mkdirSync(out, { recursive: true });
 
 const browser = await puppeteer.launch({
@@ -39,6 +39,11 @@ if (!steps.length) await shoot('start');
 for (const s of steps) {
   if (s.startsWith('eval:')) { await page.evaluate(s.slice(5)); await new Promise(r => setTimeout(r, 1200)); continue; }
   if (s.startsWith('wait:')) { await new Promise(r => setTimeout(r, +s.slice(5))); continue; }
+  if (s.startsWith('hold:')) { const [, k, ms] = s.split(':'); await page.keyboard.down(k); await new Promise(r => setTimeout(r, +ms)); await page.keyboard.up(k); continue; }
+  if (s.startsWith('down:')) { await page.keyboard.down(s.slice(5)); continue; }
+  if (s.startsWith('up:')) { await page.keyboard.up(s.slice(3)); continue; }
+  if (s === 'shot') { await shoot('shot'); continue; }
+  if (s.startsWith('log:')) { console.log('log:', JSON.stringify(await page.evaluate(s.slice(4)))); continue; }
   await page.keyboard.press(s);
   await new Promise(r => setTimeout(r, 1800));
   await shoot(s);
