@@ -23,6 +23,7 @@ import { createHud } from './ui/hud.js';
 import { createBigMap } from './ui/bigmap.js';
 import { createMenu } from './ui/menu.js';
 import { createGameHud } from './ui/gamehud.js';
+import { createTouch, isTouch } from './ui/touch.js';
 import { buildStreetGraph } from './game/route.js';
 import { Race, buildRaceTrack } from './game/race.js';
 import { Mission } from './game/missions.js';
@@ -52,7 +53,8 @@ const VIEWS = {
 
 async function boot() {
   await step('Starting the engine', 5);
-  const R = createRenderer($('#view'));
+  const quality = params.get('q') || (isTouch() ? 'low' : 'high');
+  const R = createRenderer($('#view'), { quality });
   const { scene, camera, csm, composer, renderer } = R;
   const sky = createSky(renderer, scene);
 
@@ -136,6 +138,12 @@ async function boot() {
   const hud = createHud(hudRoot, { map, hf, world, places });
   hudRoot.insertAdjacentHTML('beforeend', '<div class="p2hud panel" style="display:none"></div><div class="split-line"></div>');
   const p2hud = hudRoot.querySelector('.p2hud');
+  const touch = isTouch() ? createTouch(hudRoot, input, {
+    onAction: a => {
+      if (a === 'map') { if (!game) bigmap.toggle(player); }
+      if (a === 'hop') dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE' }));
+    },
+  }) : null;
   const teleport = (x, z, place) => {
     let tx = x, tz = z, h = player.heading;
     const s = world.nearestStreet(x, z);
@@ -227,6 +235,7 @@ async function boot() {
     R.setSplit(twoP && m === 'play');
     hud.el.classList.toggle('two', twoP);
     p2hud.style.display = twoP && m === 'play' ? '' : 'none';
+    touch?.show(m === 'play');
     if (m !== 'play') for (const k of ['up', 'down', 'left', 'right']) input[k] = false;
   }
   setMode(params.has('play') ? 'play' : 'menu');
@@ -326,6 +335,7 @@ async function boot() {
         player.update(dt);
         const near = transit.nearest(player.pos.x, player.pos.z, 7, 'cablecar');
         hud.hint(near && Math.abs(player.speed) < 7 ? `<kbd>E</kbd> hop on the ${near.name} cable car` : '');
+        touch?.setHop(!!near);
       }
       chase.update(dt, player); hud.update(dt, player);
       if (twoP) {

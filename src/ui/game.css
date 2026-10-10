@@ -195,3 +195,17 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0d10; col
 .g-pos .pp { font: 600 11px var(--sans); color: var(--orange); letter-spacing: .1em; margin-right: 4px; vertical-align: middle; }
 .g-fog.half { right: 50%; }
 .hud-game.two .gauges { left: 20px; right: auto; }
+
+/* ---------- touch ---------- */
+.touch { position: absolute; inset: 0; display: none; pointer-events: none; }
+.touch.on { display: block; }
+.t-stick { position: absolute; left: 28px; bottom: 32px; width: 150px; height: 150px; border-radius: 50%; background: rgba(14,17,22,.35); border: 1px solid var(--glass-line); backdrop-filter: blur(10px); pointer-events: auto; touch-action: none; }
+.t-knob { position: absolute; left: 50%; top: 50%; width: 62px; height: 62px; margin: -31px 0 0 -31px; border-radius: 50%; background: rgba(244,241,236,.85); box-shadow: 0 4px 14px rgba(0,0,0,.35); }
+.t-buttons { position: absolute; right: 24px; bottom: 32px; display: grid; grid-template-columns: repeat(2, 72px); gap: 12px; pointer-events: auto; }
+.t-btn { width: 72px; height: 72px; border-radius: 50%; font: 600 12px var(--sans); color: var(--text); background: rgba(14,17,22,.45); border: 1px solid var(--glass-line); backdrop-filter: blur(10px); touch-action: none; }
+.t-jump { background: rgba(229,83,45,.85); border-color: transparent; }
+@media (pointer: coarse) {
+  .hud-game .gauges { bottom: auto; top: 160px; right: 12px; }
+  .hud-game .nearby { display: none !important; }
+  .hud-buttons { top: 12px; right: 12px; }
+}
