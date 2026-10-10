@@ -190,7 +190,7 @@ for (const e of elements.values()) {
 // The Golden Gate's roadway in OSM sits too low between its terrain-anchored ends; give the span its
 // real profile (about 75 m at mid-span, 73 m at the towers, 69 m at the anchorages), blended into the approaches.
 {
-  const [sx, sz] = project(37.81085, -122.47770), [nx, nz] = project(37.82618, -122.47915);
+  const [sx, sz] = project(37.81403, -122.47774), [nx, nz] = project(37.82551, -122.47908); // tower centres (OSM parts)
   const L = Math.hypot(nx - sx, nz - sz), ux = (nx - sx) / L, uz = (nz - sz) / L;
   const ggName = names.indexOf('Golden Gate Bridge');
   let n = 0;

@@ -335,3 +335,62 @@ export function lightPools(spots, color, radius = 9) {
   im.renderOrder = 2;
   return im;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Street-facing frame for an OSM footprint: finds the footprint edge nearest to a road whose name
+// matches `street` (falls back to `fallbackDir`, a world direction the front faces). Returns a frame
+// whose origin is the front edge's midpoint, local -z pointing out to the street, local +x along the
+// facade; plus the facade width and the depth of the footprint behind it.
+export function streetFrame(map, ring, street, fallbackDir = [1, 0]) {
+  const segs = [];
+  if (street) {
+    const re = street instanceof RegExp ? street : new RegExp('^' + street + '$', 'i');
+    const [cx, cz] = centroid(ring);
+    for (const r of map.roads) {
+      const nm = typeof r.n === 'number' ? (map.names || [])[r.n] : r.n;
+      if (!nm || !re.test(nm)) continue;
+      for (let i = 0; i < r.p.length - 2; i += 2) {
+        if (Math.hypot(r.p[i] - cx, r.p[i + 1] - cz) > 300) continue;
+        segs.push([r.p[i], r.p[i + 1], r.p[i + 2], r.p[i + 3]]);
+      }
+    }
+  }
+  const segDist = (x, z) => {
+    let best = Infinity;
+    for (const [ax, az, bx, bz] of segs) {
+      const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / L));
+      best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t));
+    }
+    return best;
+  };
+  const n = ring.length / 2;
+  const cw = signedArea(Array.from({ length: n }, (_, i) => [ring[i * 2], ring[i * 2 + 1]])) > 0;
+  let best = null;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    const ax = ring[i * 2], az = ring[i * 2 + 1], bx = ring[j * 2], bz = ring[j * 2 + 1];
+    const len = Math.hypot(bx - ax, bz - az);
+    if (len < 3) continue;
+    // outward normal (rings with positive (x,z) area are clockwise from above: outward = (dz, -dx))
+    let nx = (bz - az) / len, nz = -(bx - ax) / len;
+    if (!cw) { nx = -nx; nz = -nz; }
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+    const score = segs.length ? segDist(mx + nx * 2, mz + nz * 2) - len * 0.08 : -(nx * fallbackDir[0] + nz * fallbackDir[1]) * 10 - len * 0.05;
+    if (!best || score < best.score) best = { score, mx, mz, nx, nz, len };
+  }
+  const F = frame(best.mx, best.mz, best.nx, best.nz);
+  // depth: farthest footprint vertex behind the front edge
+  let depth = 0, x0 = Infinity, x1 = -Infinity;
+  for (let i = 0; i < n; i++) {
+    const [lx, lz] = F.toLocal(ring[i * 2], ring[i * 2 + 1]);
+    depth = Math.max(depth, lz); x0 = Math.min(x0, lx); x1 = Math.max(x1, lx);
+  }
+  return { F, width: best.len, depth, x0, x1, found: segs.length > 0, score: best.score };
+}
+
+// buildings near a point, nearest first; optional filter
+export function nearBuildings(map, x, z, r, filter = () => true) {
+  return map.buildings.map(b => ({ b, c: centroid(b.p) })).map(o => ({ ...o, d: Math.hypot(o.c[0] - x, o.c[1] - z) }))
+    .filter(o => o.d < r && filter(o.b)).sort((a, b) => a.d - b.d);
+}
